@@ -1,0 +1,57 @@
+# Devpost submission checklist — "Hack the Zero Stack" (deadline Jun 30, 2026)
+
+**Track: 2 — Monetizable B2B app** (fair-launch infrastructure for clinics, ticketing,
+retail drops; providers pay per release / SaaS seat). Also competes for **Best Technical
+Implementation**.
+
+> Two allocation modes, both provable on Aurora DSQL: **Mode A** (first-come, sharded atomic
+> claims, live no-oversell dashboard) and **Mode B** (windowed lottery with a commit-reveal
+> draw — the verify page re-runs the entire draw in the visitor's browser and shows MATCH).
+> Video beat: enter the window → draw → click "Re-run the draw" → MATCH banner.
+
+## Required items
+
+- [ ] **Text description** — must name the AWS Database: **Amazon Aurora DSQL** (single- or
+      multi-region peered). Lead with the insight: no-oversell as one ordinary ACID
+      transaction because DSQL is strongly consistent + active-active + serverless.
+- [ ] **Demo video < 3 min** (YouTube, public). Script beats:
+      1. (0:00–0:25) Problem: oversold appointments / crashed ticket drops; who it's for.
+      2. (0:25–1:10) Live flow: intake countdown → claim → receipt "#n of N" → public ledger.
+      3. (1:10–2:10) The proof: admin "Run burst" → **oversells: 0**, ranks 1..N, latency +
+         OCC retries on screen; mention `npm run stress` 3,000 vs 200.
+      4. (2:10–2:45) Why Aurora DSQL: sharded counter + OCC retry diagram beat; (if built)
+         two regions, one consistent database.
+      5. (2:45–3:00) Monetization one-liner + close.
+- [ ] **Published Vercel project link** + **Vercel Team ID** (Team settings → copy ID).
+- [ ] **Architecture diagram** — `docs/architecture.png` (source `docs/architecture.svg`).
+- [ ] **Screenshot: storage configuration proving AWS Database usage** — Vercel project
+      → Settings → Environment Variables showing `DSQL_CLUSTER_ENDPOINT` / `AWS_REGION`
+      (values hidden is fine), plus AWS console cluster page as backup.
+
+## Bonus points
+
+- [ ] **Published content piece** with the required disclosure ("created for the purposes of
+      entering this hackathon") + **#H0Hackathon** when shared. Draft title: *"How I built
+      provably-fair, no-oversell allocation on Aurora DSQL (OCC retries, sharded counters,
+      and a 3,000-claim stress test)"* — publish on builder.aws.com or dev.to.
+
+## v0 evidence (the "Zero Stack" story)
+
+- [x] v0 chat links (public, "anyone with the link"):
+      - Receipt card: https://v0.app/chat/fair-allocation-receipt-r02sWMCWGhN
+      - Landing hero + principles: https://v0.app/chat/singleton-landing-page-pqMkmiIqurO
+- [x] v0's own light/dark verification renders: `docs/v0/receipt-light.png`, `docs/v0/receipt-dark.png`
+      (plus take one screenshot of the v0 chat UI for the video).
+- [x] Imported components live in `src/components/v0/` (provenance headers note the chat URL and
+      the minimal adaptations: `brand`→`primary` token, `render`→`asChild`, anchor→`next/link`).
+      Wired into `app/page.tsx` (Hero, Principles) and `app/receipt/[allocationId]/page.tsx`
+      (AllocationReceipt with live rank data).
+- [ ] One line in the description: "Landing hero/principles and the allocation receipt card were
+      scaffolded with v0 (v0 Max) and imported into the hand-built data layer."
+
+## Pre-submit verification
+
+- [ ] `npm run stress -- --attempts 3000 --capacity 200 --shardCount 32` → exit 0, oversells 0.
+- [ ] `npm run test` + `npm run test:e2e` green against the live cluster.
+- [ ] Deployed flow smoke-tested: claim → receipt → verify on the Vercel URL.
+- [ ] `/api/health` returns ok on production.

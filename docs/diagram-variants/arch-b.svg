@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="arrG" markerWidth="10" markerHeight="10" refX="9" refY="4.5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#737373"/>
+    </marker>
+    <marker id="arrI" markerWidth="10" markerHeight="10" refX="9" refY="4.5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#4f46e5"/>
+    </marker>
+  </defs>
+
+  <!-- background -->
+  <rect x="0" y="0" width="1600" height="1000" fill="#ffffff"/>
+
+  <!-- ===================== title block ===================== -->
+  <rect x="60" y="30" width="5" height="32" rx="2" fill="#4f46e5"/>
+  <text x="78" y="54" font-size="26" font-weight="600" fill="#171717">Singleton</text>
+  <text x="78" y="78" font-size="14" fill="#737373">Provably-fair, no-oversell allocation — Amazon Aurora DSQL + Next.js on Vercel</text>
+
+  <!-- ===================== clients zone ===================== -->
+  <text x="60" y="97" font-size="11.5" font-weight="600" letter-spacing="2" fill="#737373">CLIENTS</text>
+
+  <rect x="60" y="104" width="470" height="64" rx="12" fill="#ffffff" stroke="#e5e5e5" stroke-width="1"/>
+  <text x="76" y="131" font-size="13.5" font-weight="600" fill="#171717">Claimants</text>
+  <text x="76" y="151" font-size="12.5" fill="#737373">thousands, concurrent (intake page)</text>
+
+  <rect x="565" y="104" width="470" height="64" rx="12" fill="#ffffff" stroke="#e5e5e5" stroke-width="1"/>
+  <text x="581" y="131" font-size="13.5" font-weight="600" fill="#171717">Admin</text>
+  <text x="581" y="151" font-size="12.5" fill="#737373">dashboard + burst trigger</text>
+
+  <rect x="1070" y="104" width="470" height="64" rx="12" fill="#ffffff" stroke="#e5e5e5" stroke-width="1"/>
+  <text x="1086" y="131" font-size="13.5" font-weight="600" fill="#171717">Stress harness</text>
+  <text x="1086" y="151" font-size="12.5" fill="#737373"><tspan font-family="Consolas, monospace">scripts/stress.ts</tspan> · 3,000 concurrent claims</text>
+
+  <!-- clients -> vercel arrows -->
+  <line x1="295" y1="170" x2="295" y2="212" stroke="#737373" stroke-width="1" marker-end="url(#arrG)"/>
+  <line x1="800" y1="170" x2="800" y2="212" stroke="#737373" stroke-width="1" marker-end="url(#arrG)"/>
+  <line x1="1305" y1="170" x2="1305" y2="212" stroke="#737373" stroke-width="1" marker-end="url(#arrG)"/>
+  <text x="305" y="195" font-size="11.5" fill="#737373">HTTPS</text>
+  <text x="810" y="195" font-size="11.5" fill="#737373">HTTPS</text>
+  <text x="1315" y="195" font-size="11.5" fill="#737373">HTTPS</text>
+
+  <!-- ===================== vercel panel ===================== -->
+  <rect x="60" y="216" width="1480" height="256" rx="14" fill="#fafafa" stroke="#e5e5e5" stroke-width="1"/>
+  <path d="M80,245 L92,245 L86,234 Z" fill="#171717"/>
+  <text x="102" y="245" font-size="15" font-weight="600" fill="#171717">Vercel — Next.js 15 App Router · Node.js runtime · iad1 (us-east-1)</text>
+
+  <!-- sub-box: react ui -->
+  <rect x="80" y="260" width="466" height="194" rx="10" fill="#ffffff" stroke="#e5e5e5" stroke-width="1"/>
+  <text x="96" y="285" font-size="14" font-weight="600" fill="#171717">React UI</text>
+  <text x="96" y="312" font-size="12.5" font-family="Consolas, monospace" fill="#171717">/releases/[id]</text>
+  <text x="96" y="330" font-size="12.5" fill="#737373">countdown + live remaining count (polls 1.5s)</text>
+  <text x="96" y="358" font-size="12.5" font-family="Consolas, monospace" fill="#171717">/receipt/[id]<tspan font-family="Segoe UI, Arial, sans-serif" fill="#737373"> — rank #n of N</tspan></text>
+  <text x="96" y="384" font-size="12.5" font-family="Consolas, monospace" fill="#171717">/verify/[id]<tspan font-family="Segoe UI, Arial, sans-serif" fill="#737373"> — public immutable ledger</tspan></text>
+  <text x="96" y="410" font-size="12.5" font-family="Consolas, monospace" fill="#171717">/admin<tspan font-family="Segoe UI, Arial, sans-serif" fill="#737373"> — create releases, run burst, metrics</tspan></text>
+
+  <!-- sub-box: api route handlers -->
+  <rect x="567" y="260" width="466" height="194" rx="10" fill="#ffffff" stroke="#e5e5e5" stroke-width="1"/>
+  <text x="583" y="285" font-size="14" font-weight="600" fill="#171717">API route handlers (app/api)</text>
+  <text x="583" y="316" font-size="12.5" font-family="Consolas, monospace" fill="#171717">POST /releases/[id]/claim</text>
+  <rect x="785" y="301" width="78" height="20" rx="10" fill="#ffffff" stroke="#4f46e5" stroke-width="1"/>
+  <text x="824" y="315" font-size="11" font-weight="600" fill="#4f46e5" text-anchor="middle">the heart</text>
+  <text x="583" y="346" font-size="12.5" font-family="Consolas, monospace" fill="#171717">GET /releases/[id]/state</text>
+  <text x="583" y="374" font-size="12.5" font-family="Consolas, monospace" fill="#171717">GET /releases/[id]/ledger</text>
+  <text x="583" y="402" font-size="12.5" font-family="Consolas, monospace" fill="#171717">POST /releases/[id]/simulate<tspan font-family="Segoe UI, Arial, sans-serif" fill="#737373"> (admin)</tspan></text>
+  <text x="583" y="430" font-size="12.5" font-family="Consolas, monospace" fill="#171717">GET /health</text>
+
+  <!-- sub-box: data + domain layer -->
+  <rect x="1054" y="260" width="466" height="194" rx="10" fill="#ffffff" stroke="#e5e5e5" stroke-width="1"/>
+  <text x="1070" y="285" font-size="14" font-weight="600" fill="#171717">Data + domain layer (src/)</text>
+  <text x="1070" y="312" font-size="13" font-weight="600" fill="#171717">claim algorithm</text>
+  <text x="1070" y="330" font-size="12.5" fill="#737373">shuffled shard order, idempotent (unique per claimant)</text>
+  <text x="1070" y="356" font-size="13" font-weight="600" font-family="Consolas, monospace" fill="#171717">withRetry</text>
+  <text x="1070" y="374" font-size="12.5" fill="#737373">OCC SQLSTATE 40001 / OC000 → retry ≤8× expo backoff + jitter</text>
+  <text x="1070" y="400" font-size="13" font-weight="600" font-family="Consolas, monospace" fill="#171717">AuroraDSQLPool singleton</text>
+  <text x="1070" y="418" font-size="12.5" fill="#737373">fresh IAM token per connection, no static password</text>
+  <text x="1070" y="436" font-size="12.5" fill="#737373">attachDatabasePool (Fluid Compute)</text>
+
+  <!-- vercel -> aws arrows -->
+  <line x1="300" y1="474" x2="300" y2="527" stroke="#4f46e5" stroke-width="1.5" marker-end="url(#arrI)"/>
+  <text x="312" y="504" font-size="12" font-weight="600" fill="#171717">PostgreSQL wire + TLS · IAM auth token</text>
+  <line x1="880" y1="474" x2="880" y2="527" stroke="#737373" stroke-width="1" stroke-dasharray="5 4" marker-end="url(#arrG)"/>
+  <text x="892" y="504" font-size="12" fill="#737373">failover / locality</text>
+
+  <!-- ===================== aws panel ===================== -->
+  <rect x="60" y="530" width="1480" height="190" rx="14" fill="#fafafa" stroke="#e5e5e5" stroke-width="1"/>
+  <rect x="80" y="545" width="4" height="14" rx="1" fill="#ff9900"/>
+  <text x="94" y="557" font-size="15" font-weight="600" fill="#171717">AWS — Amazon Aurora DSQL · serverless · strongly consistent · active-active</text>
+
+  <!-- us-east-1 -->
+  <rect x="80" y="572" width="440" height="130" rx="10" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
+  <text x="96" y="596" font-size="13.5" font-weight="600" fill="#171717">us-east-1 · primary endpoint (read + write)</text>
+  <rect x="96" y="612" width="82" height="24" rx="12" fill="#fafafa" stroke="#e5e5e5" stroke-width="1"/>
+  <text x="137" y="628" font-size="12" font-family="Consolas, monospace" fill="#171717" text-anchor="middle">providers</text>
+  <rect x="186" y="612" width="76" height="24" rx="12" fill="#fafafa" stroke="#e5e5e5" stroke-width="1"/>
+  <text x="224" y="628" font-size="12" font-family="Consolas, monospace" fill="#171717" text-anchor="middle">releases</text>
+  <rect x="270" y="612" width="96" height="24" rx="12" fill="#fafafa" stroke="#e5e5e5" stroke-width="1"/>
+  <text x="318" y="628" font-size="12" font-family="Consolas, monospace" fill="#171717" text-anchor="middle">allocations</text>
+  <rect x="374" y="612" width="76" height="24" rx="12" fill="#fafafa" stroke="#e5e5e5" stroke-width="1"/>
+  <text x="412" y="628" font-size="12" font-family="Consolas, monospace" fill="#171717" text-anchor="middle">waitlist</text>
+  <rect x="96" y="644" width="288" height="24" rx="12" fill="#fafafa" stroke="#e5e5e5" stroke-width="1"/>
+  <text x="240" y="660" font-size="12" font-family="Consolas, monospace" fill="#171717" text-anchor="middle">release_shards ×32 <tspan fill="#737373">(sharded counter)</tspan></text>
+
+  <!-- peering link east-1 <-> east-2 -->
+  <line x1="528" y1="598" x2="652" y2="598" stroke="#4f46e5" stroke-width="1.5"/>
+  <path d="M528,598 L538,593 L538,603 Z" fill="#4f46e5"/>
+  <path d="M652,598 L642,593 L642,603 Z" fill="#4f46e5"/>
+  <text x="590" y="622" font-size="11.5" font-weight="600" fill="#4f46e5" text-anchor="middle">one logical DB</text>
+  <text x="590" y="638" font-size="11.5" fill="#737373" text-anchor="middle">synchronous,</text>
+  <text x="590" y="654" font-size="11.5" fill="#737373" text-anchor="middle">strongly consistent</text>
+
+  <!-- us-east-2 -->
+  <rect x="660" y="572" width="440" height="130" rx="10" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
+  <text x="676" y="596" font-size="13.5" font-weight="600" fill="#171717">us-east-2 · peered endpoint (read + write)</text>
+  <text x="676" y="620" font-size="12.5" fill="#737373">same logical database</text>
+
+  <!-- link to witness -->
+  <line x1="1100" y1="637" x2="1198" y2="637" stroke="#d4d4d4" stroke-width="1" stroke-dasharray="4 4"/>
+
+  <!-- us-west-2 witness (smaller, dimmer) -->
+  <rect x="1200" y="587" width="320" height="100" rx="10" fill="#fafafa" stroke="#e5e5e5" stroke-width="1"/>
+  <text x="1216" y="614" font-size="13" font-weight="600" fill="#737373">us-west-2 · witness region</text>
+  <text x="1216" y="636" font-size="12.5" fill="#737373">transaction-log quorum, no endpoint</text>
+
+  <!-- ===================== bottom row ===================== -->
+  <!-- claim transaction callout -->
+  <rect x="60" y="756" width="880" height="190" rx="12" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
+  <rect x="64" y="773" width="9" height="9" rx="2" fill="#4f46e5"/>
+  <text x="84" y="784" font-size="14" font-weight="600" fill="#171717">The claim transaction (one ACID transaction)</text>
+  <text x="84" y="812" font-size="12.5" font-weight="600" font-family="Consolas, monospace" fill="#4f46e5">1</text>
+  <text x="106" y="812" font-size="12.5" font-family="Consolas, monospace" fill="#171717">BEGIN</text>
+  <text x="84" y="836" font-size="12.5" font-weight="600" font-family="Consolas, monospace" fill="#4f46e5">2</text>
+  <text x="106" y="836" font-size="12.5" font-family="Consolas, monospace" fill="#171717">UPDATE release_shards SET remaining = remaining − 1</text>
+  <text x="106" y="854" font-size="12.5" font-family="Consolas, monospace" fill="#171717">  WHERE release_id = $1 AND shard_index = $2 AND remaining &gt; 0 RETURNING id</text>
+  <text x="84" y="878" font-size="12.5" font-weight="600" font-family="Consolas, monospace" fill="#4f46e5">3</text>
+  <text x="106" y="878" font-size="12.5" font-family="Consolas, monospace" fill="#171717">INSERT INTO allocations (id, release_id, claimant_id, shard_id, idempotency_key)</text>
+  <text x="84" y="902" font-size="12.5" font-weight="600" font-family="Consolas, monospace" fill="#4f46e5">4</text>
+  <text x="106" y="902" font-size="12.5" font-family="Consolas, monospace" fill="#171717">COMMIT</text>
+  <line x1="84" y1="914" x2="916" y2="914" stroke="#e5e5e5" stroke-width="1"/>
+  <text x="84" y="933" font-size="12" fill="#737373">on OCC conflict (40001 / OC000): retry whole claim with backoff</text>
+
+  <!-- invariant chips -->
+  <rect x="1000" y="756" width="540" height="190" rx="12" fill="#fafafa" stroke="#e5e5e5" stroke-width="1"/>
+  <text x="1020" y="784" font-size="14" font-weight="600" fill="#171717">Invariants</text>
+  <rect x="1020" y="800" width="130" height="32" rx="16" fill="#ffffff" stroke="#4f46e5" stroke-width="1"/>
+  <text x="1085" y="820" font-size="12.5" font-family="Consolas, monospace" fill="#171717" text-anchor="middle">oversells = 0</text>
+  <rect x="1166" y="800" width="196" height="32" rx="16" fill="#ffffff" stroke="#4f46e5" stroke-width="1"/>
+  <text x="1264" y="820" font-size="12.5" font-family="Consolas, monospace" fill="#171717" text-anchor="middle">≤ 1 slot per claimant</text>
+  <rect x="1020" y="844" width="250" height="32" rx="16" fill="#ffffff" stroke="#4f46e5" stroke-width="1"/>
+  <text x="1145" y="864" font-size="12.5" font-family="Consolas, monospace" fill="#171717" text-anchor="middle">ranks derived · 1..N contiguous</text>
+  <rect x="1020" y="888" width="302" height="32" rx="16" fill="#ffffff" stroke="#4f46e5" stroke-width="1"/>
+  <text x="1171" y="908" font-size="12.5" font-family="Consolas, monospace" fill="#171717" text-anchor="middle">SUM(remaining) + allocated = capacity</text>
+</svg>
