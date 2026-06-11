@@ -1,65 +1,78 @@
-import Image from "next/image";
+import Link from "next/link";
+import { SiteHeader, SiteFooter } from "@/components/site-header";
+import { Hero } from "@/components/v0/hero";
+import { Principles } from "@/components/v0/principles";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { listReleases, getReleaseState, type ReleaseState } from "@/db/releases";
 
-export default function Home() {
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+async function loadReleases(): Promise<ReleaseState[] | null> {
+  try {
+    const releases = await listReleases();
+    const states = await Promise.all(releases.slice(0, 12).map((r) => getReleaseState(r.id)));
+    return states.filter((s): s is ReleaseState => Boolean(s));
+  } catch {
+    return null; // database not configured / unreachable
+  }
+}
+
+export default async function Home() {
+  const releases = await loadReleases();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+    <>
+      <SiteHeader />
+      <main className="flex-1">
+        {/* Hero + principles scaffolded with v0 — see src/components/v0/ */}
+        <Hero />
+        <Principles />
+
+        <section className="mx-auto max-w-5xl space-y-4 px-6 pb-24">
+          <h2 className="text-lg font-medium tracking-tight">Live releases</h2>
+          {releases === null ? (
+            <p className="text-sm text-muted-foreground">
+              No database connection yet. Set up Aurora DSQL (see the README) and run{" "}
+              <code className="rounded bg-muted px-1 py-0.5">npm run seed</code> to create a demo
+              release.
+            </p>
+          ) : releases.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No releases yet.{" "}
+              <Link className="underline underline-offset-4" href="/admin">
+                Create one in the admin
+              </Link>{" "}
+              or run <code className="rounded bg-muted px-1 py-0.5">npm run seed</code>.
+            </p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {releases.map((s) => (
+                <Link key={s.releaseId} href={`/releases/${s.releaseId}`} className="group">
+                  <Card className="transition-colors group-hover:border-primary/50">
+                    <CardHeader>
+                      <div className="flex items-center justify-between gap-2">
+                        <CardTitle className="text-base">{s.title}</CardTitle>
+                        <Badge
+                          variant={s.remaining > 0 ? "default" : "secondary"}
+                          className="rounded-full"
+                        >
+                          {s.remaining > 0 ? "Open" : "Sold out"}
+                        </Badge>
+                      </div>
+                      <CardDescription className="tabular-nums">
+                        {s.remaining} of {s.capacity} remaining
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
       </main>
-    </div>
+      <SiteFooter />
+    </>
   );
 }
