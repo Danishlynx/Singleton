@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+build
+dist
+coverage
+package-lock.json
+*.log
+public
+db/migrations
+test-results
+playwright-report
