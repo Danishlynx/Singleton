@@ -30,12 +30,22 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files (never commit real secrets; the example IS committed)
 .env*
+!.env.example
 
 # vercel
 .vercel
 
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/.cache/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# raw v0 ZIP exports (imported components live in src/components/v0; evidence in docs/v0)
+/V0/
