@@ -13,6 +13,25 @@ export function useAdminToken() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
+    // Magic link for judges/reviewers: /admin?token=... signs in directly (the
+    // token is published in the submission's testing instructions, per the
+    // hackathon rules). The param is scrubbed from the URL immediately so it
+    // doesn't linger in the address bar or get copied around.
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = params.get("token");
+    if (fromUrl) {
+      localStorage.setItem(STORAGE_KEY, fromUrl);
+      params.delete("token");
+      const rest = params.toString();
+      window.history.replaceState(
+        null,
+        "",
+        window.location.pathname + (rest ? `?${rest}` : ""),
+      );
+      setTokenState(fromUrl);
+      setLoaded(true);
+      return;
+    }
     setTokenState(localStorage.getItem(STORAGE_KEY));
     setLoaded(true);
   }, []);
@@ -49,7 +68,11 @@ export function TokenGate({ children }: { children: (token: string) => ReactNode
       <Card className="mx-auto max-w-sm">
         <CardHeader>
           <CardTitle>Admin access</CardTitle>
-          <CardDescription>Enter the ADMIN_TOKEN to manage releases.</CardDescription>
+          <CardDescription>
+            This area is for release operators. Reviewing for the hackathon? Use the one-click
+            admin link in the submission&apos;s testing instructions — it signs you in here
+            automatically.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="space-y-2">

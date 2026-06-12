@@ -49,6 +49,36 @@ Implementation**.
 - [ ] One line in the description: "Landing hero/principles and the allocation receipt card were
       scaffolded with v0 (v0 Max) and imported into the hand-built data layer."
 
+## Testing instructions (paste into the Devpost form)
+
+> The rules require free, unrestricted judge access and explicitly allow credentials in
+> testing instructions. The admin magic link signs judges in with one click
+> (`/admin?token=…` stores the token and scrubs it from the URL).
+
+Template — fill the deployed URL + the production ADMIN_TOKEN before submitting:
+
+```
+Everything is live and free to test — no account needed.
+
+PARTICIPANT FLOW (no credentials):
+1. Open <VERCEL_URL> → pick any release (poster cards).
+2. FCFS release: enter any email → "Claim a slot" → receipt with rank + QR →
+   "Verify on the public ledger".
+3. Lottery release: "Enter the draw" → watch the entrant count + fairness
+   commitment; after the draw, "Re-run the draw in your browser" on the verify
+   page recomputes every winner client-side (MATCH banner).
+
+ADMIN FLOW (one-click sign-in):
+<VERCEL_URL>/admin?token=<ADMIN_TOKEN>
+• Create a release (either mode, optional poster image URL).
+• Open a release monitor → "Run burst" fires hundreds of concurrent claims and
+  shows the live invariant audit (oversells: 0, latency, OCC retries).
+• Lottery releases: "Run draw" once the window closes.
+
+The cluster (Aurora DSQL, us-east-1) and this deployment stay up through the
+entire judging period.
+```
+
 ## Pre-submit verification
 
 - [ ] `npm run stress -- --attempts 3000 --capacity 200 --shardCount 32` → exit 0, oversells 0.
