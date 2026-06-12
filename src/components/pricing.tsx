@@ -47,8 +47,8 @@ const TIERS = [
 export function Pricing() {
   return (
     <section className="mx-auto max-w-5xl space-y-6 px-6 pb-24">
-      <div className="space-y-1">
-        <h2 className="text-lg font-medium tracking-tight">Pricing for providers</h2>
+      <div className="space-y-1.5 border-t pt-6">
+        <h2 className="text-lg font-semibold tracking-tight">Pricing for providers</h2>
         <p className="text-sm text-muted-foreground">
           Claimants never pay Singleton. Providers pay for allocation they can defend in public —
           &ldquo;verify it yourself&rdquo; is a better answer than &ldquo;trust us.&rdquo;
@@ -58,28 +58,30 @@ export function Pricing() {
         {TIERS.map((t) => (
           <Card
             key={t.name}
-            className={t.highlight ? "border-primary/50 shadow-none" : "border-muted shadow-none"}
+            className={t.highlight ? "border-primary/40 shadow-none" : "shadow-none"}
           >
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base">{t.name}</CardTitle>
+                <CardTitle className="micro-label text-muted-foreground">{t.name}</CardTitle>
                 {t.highlight && (
                   <Badge className="rounded-full" variant="default">
                     Most common
                   </Badge>
                 )}
               </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl font-semibold tracking-tight">{t.price}</span>
+              <div className="flex items-baseline gap-1.5 pt-1">
+                <span className="font-mono text-3xl font-semibold tracking-tight tabular-nums">
+                  {t.price}
+                </span>
                 <span className="text-sm text-muted-foreground">{t.cadence}</span>
               </div>
               <p className="text-sm text-muted-foreground">{t.blurb}</p>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-2 text-sm">
+              <ul className="space-y-2 border-t border-dashed pt-4 text-sm">
                 {t.features.map((f) => (
                   <li key={f} className="flex items-start gap-2">
-                    <Check className="mt-0.5 size-4 shrink-0 text-primary" />
+                    <Check className="mt-0.5 size-4 shrink-0 text-accent-foreground" />
                     <span>{f}</span>
                   </li>
                 ))}

@@ -182,7 +182,7 @@ export function LotteryIntakeClient({ initial }: { initial: ReleaseStateDTO }) {
     return (
       <div className="space-y-5">
         {result?.selected && result.allocationId ? (
-          <div className="rounded-lg border border-primary/30 bg-primary/5 p-5 text-center">
+          <div className="rounded-xl border border-primary/30 bg-accent/60 p-5 text-center">
             <Check className="mx-auto size-6 text-primary" />
             <h3 className="mt-2 font-medium">You were selected</h3>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -193,7 +193,7 @@ export function LotteryIntakeClient({ initial }: { initial: ReleaseStateDTO }) {
             </Button>
           </div>
         ) : result && result.selected === false ? (
-          <div className="rounded-lg border bg-muted/40 p-5 text-center">
+          <div className="rounded-xl border bg-card p-5 text-center">
             <h3 className="font-medium">Not selected this time</h3>
             <p className="mt-1 text-sm text-muted-foreground">
               {state.capacity} of {state.entrantCount} entries were drawn. Your odds were the
@@ -201,7 +201,7 @@ export function LotteryIntakeClient({ initial }: { initial: ReleaseStateDTO }) {
             </p>
           </div>
         ) : (
-          <div className="space-y-3 rounded-lg border bg-muted/40 p-5 text-center">
+          <div className="space-y-3 rounded-xl border bg-card p-5 text-center">
             <h3 className="font-medium">The draw has run</h3>
             <p className="text-sm text-muted-foreground">
               {Math.min(state.capacity, state.entrantCount ?? 0)} of {state.entrantCount} entries
@@ -242,14 +242,14 @@ export function LotteryIntakeClient({ initial }: { initial: ReleaseStateDTO }) {
       {/* Entrants + window */}
       <div className="space-y-2">
         <div className="flex items-baseline justify-between">
-          <span className="text-sm text-muted-foreground">Entries in the draw</span>
-          <span className="text-sm text-muted-foreground tabular-nums">
+          <span className="micro-label text-muted-foreground">Entries in the draw</span>
+          <span className="font-mono text-xs tabular-nums text-muted-foreground">
             {state.capacity} slots to win
           </span>
         </div>
         <div className="flex items-center gap-3">
           <span
-            className="text-4xl font-semibold tracking-tight tabular-nums"
+            className="font-mono text-5xl font-semibold tracking-[-0.03em] tabular-nums"
             aria-live="polite"
             data-testid="entrant-count"
           >
@@ -264,11 +264,11 @@ export function LotteryIntakeClient({ initial }: { initial: ReleaseStateDTO }) {
 
       {/* Countdown to the draw */}
       {Number.isFinite(closesAt) && now < closesAt && (
-        <div className="rounded-lg border bg-muted/40 p-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock className="size-4" /> Draw in
+        <div className="rounded-xl border border-dashed bg-card p-4">
+          <div className="micro-label flex items-center gap-2 text-muted-foreground">
+            <Clock className="size-3.5" /> Draw in
           </div>
-          <div className="mt-1 text-2xl font-medium tabular-nums" data-testid="draw-countdown">
+          <div className="mt-1.5 font-mono text-2xl font-medium tabular-nums" data-testid="draw-countdown">
             {formatCountdown(Math.max(0, closesAt - now))}
           </div>
         </div>
@@ -290,7 +290,7 @@ export function LotteryIntakeClient({ initial }: { initial: ReleaseStateDTO }) {
         </div>
 
         <Button
-          className="w-full"
+          className="h-11 w-full"
           size="lg"
           onClick={doEnter}
           disabled={!windowOpen || phase !== "idle"}
@@ -324,7 +324,7 @@ export function LotteryIntakeClient({ initial }: { initial: ReleaseStateDTO }) {
         </p>
 
         {entryId && (
-          <div className="rounded-lg border bg-muted/40 p-3 text-center text-xs">
+          <div className="rounded-xl border border-dashed bg-card p-3 text-center text-xs">
             <p className="text-muted-foreground">
               Your entry id — save it to check your result from any device:
             </p>
@@ -337,12 +337,15 @@ export function LotteryIntakeClient({ initial }: { initial: ReleaseStateDTO }) {
 
       {/* Fairness commitment */}
       {state.seedHash && (
-        <div className="rounded-lg border p-4">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <ShieldCheck className="size-4 text-primary" />
-            Fairness commitment — published before entries opened
+        <div className="rounded-xl border bg-card p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <ShieldCheck className="size-4 text-accent-foreground" />
+              Fairness commitment — published before entries opened
+            </div>
+            <span className="micro-label shrink-0 text-accent-foreground">Sealed</span>
           </div>
-          <p className="mt-2 break-all font-mono text-xs text-muted-foreground">
+          <p className="mt-2 break-all rounded-md border border-dashed bg-muted/50 p-2.5 font-mono text-xs leading-relaxed text-muted-foreground">
             {state.seedHash}
           </p>
           <p className="mt-2 text-xs text-muted-foreground">

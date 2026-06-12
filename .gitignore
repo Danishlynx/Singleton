@@ -49,3 +49,6 @@ next-env.d.ts
 
 # raw v0 ZIP exports (imported components live in src/components/v0; evidence in docs/v0)
 /V0/
+
+# visual QA shots
+/.shots/

@@ -32,7 +32,9 @@ export default async function Home() {
         <Principles />
 
         <section id="releases" className="mx-auto max-w-5xl scroll-mt-20 space-y-4 px-6 pb-24">
-          <h2 className="text-lg font-medium tracking-tight">Live releases</h2>
+          <div className="space-y-1.5 border-t pt-6">
+            <h2 className="text-lg font-semibold tracking-tight">Live releases</h2>
+          </div>
           {releases === null ? (
             <p className="text-sm text-muted-foreground">
               No database connection yet. Set up Aurora DSQL (see the README) and run{" "}
@@ -62,7 +64,7 @@ export default async function Home() {
                       </div>
                     ) : (
                       <div
-                        className="h-10 w-full bg-gradient-to-r from-primary/10 via-accent to-primary/5"
+                        className="h-10 w-full border-b border-dashed bg-muted/60"
                         aria-hidden="true"
                       />
                     )}
@@ -104,7 +106,7 @@ export default async function Home() {
                           )}
                         </div>
                       </div>
-                      <CardDescription className="tabular-nums">
+                      <CardDescription className="font-mono text-xs tabular-nums">
                         {s.mode === "lottery"
                           ? `${s.entrantCount ?? 0} ${(s.entrantCount ?? 0) === 1 ? "entry" : "entries"} · ${s.capacity} ${s.capacity === 1 ? "slot" : "slots"}`
                           : `${s.remaining} of ${s.capacity} remaining`}
