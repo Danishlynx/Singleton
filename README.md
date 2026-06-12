@@ -19,7 +19,9 @@ eventual-consistency hacks, external locks, or a blockchain.
 
 ## How the guarantee works
 
-> Full architecture diagram: [docs/architecture.png](docs/architecture.png) (source
+> **The full A-to-Z deep dive lives in [docs/INTEL.md](docs/INTEL.md)** — every table, every
+> endpoint, every invariant and why it holds, the security reviews, and the live verification
+> results. Architecture diagram: [docs/architecture.png](docs/architecture.png) (source
 > [docs/architecture.svg](docs/architecture.svg)). Submission checklist:
 > [docs/SUBMISSION.md](docs/SUBMISSION.md). v0 scaffolding workflow: [docs/v0/PROMPTS.md](docs/v0/PROMPTS.md).
 
