@@ -5,7 +5,7 @@ import { useState } from "react";
 
 /**
  * Poster with a graceful failure mode: if the remote image can't load (private
- * Drive file, dead link, blocked hotlink), fall back to the calm gradient
+ * Drive file, dead link, blocked hotlink), fall back to a quiet paper band
  * instead of a broken-image glyph. Client component because onError is needed.
  */
 export function PosterImage({
@@ -25,7 +25,7 @@ export function PosterImage({
   if (failed) {
     return (
       <div
-        className="absolute inset-0 bg-gradient-to-r from-primary/15 via-accent to-primary/5"
+        className="absolute inset-0 border-b border-dashed bg-muted/60"
         aria-hidden="true"
       />
     );

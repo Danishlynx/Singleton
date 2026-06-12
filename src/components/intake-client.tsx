@@ -177,14 +177,14 @@ export function IntakeClient({ initial }: { initial: ReleaseStateDTO }) {
       {/* Live remaining */}
       <div className="space-y-2">
         <div className="flex items-baseline justify-between">
-          <span className="text-sm text-muted-foreground">Slots remaining</span>
-          <span className="tabular-nums text-sm text-muted-foreground">
+          <span className="micro-label text-muted-foreground">Slots remaining</span>
+          <span className="font-mono text-xs tabular-nums text-muted-foreground">
             {state.allocated} of {state.capacity} claimed
           </span>
         </div>
         <div className="flex items-center gap-3">
           <span
-            className="tabular-nums text-4xl font-semibold tracking-tight"
+            className="font-mono text-5xl font-semibold tracking-[-0.03em] tabular-nums"
             aria-live="polite"
             data-testid="remaining-count"
           >
@@ -199,11 +199,11 @@ export function IntakeClient({ initial }: { initial: ReleaseStateDTO }) {
 
       {/* Pre-open countdown */}
       {!isOpen && state.status !== "closed" && (
-        <div className="rounded-lg border bg-muted/40 p-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock className="size-4" /> Opens in
+        <div className="rounded-xl border border-dashed bg-card p-4">
+          <div className="micro-label flex items-center gap-2 text-muted-foreground">
+            <Clock className="size-3.5" /> Opens in
           </div>
-          <div className="mt-1 tabular-nums text-2xl font-medium" data-testid="countdown">
+          <div className="mt-1.5 font-mono text-2xl font-medium tabular-nums" data-testid="countdown">
             {formatCountdown(Math.max(0, opensAtMs - now))}
           </div>
         </div>
@@ -225,7 +225,7 @@ export function IntakeClient({ initial }: { initial: ReleaseStateDTO }) {
         </div>
 
         <Button
-          className="w-full"
+          className="h-11 w-full"
           size="lg"
           onClick={doClaim}
           // Sold out must NOT disable the button — clicking it joins the fair
@@ -265,7 +265,7 @@ export function IntakeClient({ initial }: { initial: ReleaseStateDTO }) {
         </Button>
 
         {phase === "sold_out" && (
-          <div className="rounded-lg border bg-muted/40 p-4 text-center text-sm">
+          <div className="rounded-xl border border-dashed bg-card p-4 text-center text-sm">
             <p className="font-medium">
               You&apos;re on the waitlist{waitlistPos ? ` — position #${waitlistPos}` : ""}
             </p>

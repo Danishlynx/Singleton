@@ -326,7 +326,7 @@ function ReleaseList({ refreshKey }: { refreshKey: number }) {
           <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
             <div>
               <CardTitle className="text-base">{r.title}</CardTitle>
-              <CardDescription className="tabular-nums">
+              <CardDescription className="font-mono text-xs tabular-nums">
                 {r.mode === "lottery"
                   ? `${r.entrantCount ?? 0} ${(r.entrantCount ?? 0) === 1 ? "entry" : "entries"} · ${r.capacity} slots`
                   : `${r.remaining} of ${r.capacity} remaining · ${r.allocated} claimed`}

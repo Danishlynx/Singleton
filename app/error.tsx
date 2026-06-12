@@ -12,7 +12,9 @@ export default function Error({ reset }: { error: Error & { digest?: string }; r
     <>
       <SiteHeader />
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-4 px-4 py-24 text-center">
-        <TriangleAlert className="size-10 text-muted-foreground" />
+        <span className="flex size-12 items-center justify-center rounded-xl border border-dashed bg-card">
+          <TriangleAlert className="size-5 text-muted-foreground" />
+        </span>
         <h1 className="text-2xl font-semibold tracking-tight">Something hiccuped</h1>
         <p className="text-sm text-muted-foreground">
           Usually a momentary network blip between the app and the database. Nothing was lost —

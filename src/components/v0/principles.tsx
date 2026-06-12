@@ -1,6 +1,8 @@
 // Scaffolded with v0 (v0 Max): https://v0.app/chat/singleton-landing-page-pqMkmiIqurO
 // Imported from the v0 export (components/principles.tsx).
 // Adaptations from the original: v0's `brand` color token mapped to our `primary`.
+// Counterfoil pass: icon tiles replaced with a registry-index row — mono ordinal
+// in the accent, hairline rule, quiet icon. The guarantee reads like a document.
 import { ShieldCheck, ListChecks, ScrollText, type LucideIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -34,15 +36,18 @@ const principles: Principle[] = [
 export function Principles() {
   return (
     <section className="mx-auto max-w-5xl px-6 pb-24">
-      <ul className="grid gap-6 md:grid-cols-3">
-        {principles.map(({ icon: Icon, title, description }) => (
+      <ul className="grid gap-4 md:grid-cols-3">
+        {principles.map(({ icon: Icon, title, description }, i) => (
           <li key={title}>
-            <Card className="h-full border-border/70 shadow-none">
-              <CardHeader className="gap-4">
-                <span className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-                  <Icon className="size-5" aria-hidden="true" />
-                </span>
-                <CardTitle className="text-lg font-medium">{title}</CardTitle>
+            <Card className="h-full gap-3 shadow-none">
+              <CardHeader className="gap-3">
+                <div className="flex items-center justify-between border-b border-dashed pb-3">
+                  <span className="font-mono text-[11px] font-semibold tracking-[0.14em] text-accent-foreground">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
+                </div>
+                <CardTitle className="text-base font-semibold tracking-tight">{title}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-pretty text-sm leading-relaxed text-muted-foreground">

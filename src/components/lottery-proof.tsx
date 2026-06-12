@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Play, ShieldAlert, ShieldCheck } from "lucide-react";
+import { Loader2, Play, ShieldCheck } from "lucide-react";
 import { sha256Utf8HexBrowser, deriveWinnersBrowser } from "@/lib/sha256";
 
 /**
@@ -90,7 +90,7 @@ export function LotteryProof({ releaseId }: { releaseId: string }) {
   return (
     <section className="space-y-4">
       <div className="space-y-1">
-        <h2 className="text-lg font-medium tracking-tight">Draw proof</h2>
+        <h2 className="text-lg font-semibold tracking-tight">Draw proof</h2>
         <p className="text-sm text-muted-foreground">
           {drawn
             ? "The seed is revealed — re-run the entire draw in your own browser."
@@ -98,13 +98,16 @@ export function LotteryProof({ releaseId }: { releaseId: string }) {
         </p>
       </div>
 
-      <div className="space-y-3 rounded-lg border p-4">
+      <div className="space-y-3 rounded-xl border bg-card p-4">
         <div>
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <ShieldCheck className="size-4 text-primary" />
-            Fairness commitment — published before entries opened
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <ShieldCheck className="size-4 text-accent-foreground" />
+              Fairness commitment — published before entries opened
+            </div>
+            <span className="micro-label shrink-0 text-accent-foreground">Sealed</span>
           </div>
-          <p className="mt-1 break-all font-mono text-xs text-muted-foreground">
+          <p className="mt-2 break-all rounded-md border border-dashed bg-muted/50 p-2.5 font-mono text-xs leading-relaxed text-muted-foreground">
             {proof.seedHash}
           </p>
         </div>
@@ -122,11 +125,11 @@ export function LotteryProof({ releaseId }: { releaseId: string }) {
                 </Badge>
               )}
             </div>
-            <p className="mt-1 break-all font-mono text-xs text-muted-foreground">{proof.seed}</p>
+            <p className="mt-2 break-all rounded-md border border-dashed bg-muted/50 p-2.5 font-mono text-xs leading-relaxed text-muted-foreground">{proof.seed}</p>
           </div>
         )}
 
-        <p className="text-sm text-muted-foreground tabular-nums">
+        <p className="font-mono text-xs text-muted-foreground tabular-nums">
           {proof.entrantCount} entries · {proof.capacity} slots
           {drawn && proof.winnerEntryIds ? ` · ${proof.winnerEntryIds.length} winners drawn` : ""}
         </p>
@@ -136,7 +139,7 @@ export function LotteryProof({ releaseId }: { releaseId: string }) {
             <Button
               onClick={rerunDraw}
               disabled={rerun.kind === "running"}
-              className="w-full"
+              className="h-11 w-full"
               size="lg"
               data-testid="rerun-draw"
             >
@@ -154,29 +157,23 @@ export function LotteryProof({ releaseId }: { releaseId: string }) {
 
             {rerun.kind === "match" && (
               <div
-                className="flex items-center gap-3 rounded-lg border border-primary/40 bg-primary/10 p-4"
+                className="flex items-center gap-4 rounded-xl border border-primary/40 bg-accent/60 p-4"
                 data-testid="rerun-result"
               >
-                <ShieldCheck className="size-6 shrink-0 text-primary" />
-                <div>
-                  <div className="text-base font-semibold">MATCH</div>
-                  <div className="text-sm text-muted-foreground">
-                    Your browser re-derived all {rerun.winners} winners from the seed and entry
-                    list in {rerun.ms} ms — identical to the published result.
-                  </div>
+                <span className="stamp shrink-0 -rotate-2 text-accent-foreground">MATCH</span>
+                <div className="text-sm text-muted-foreground tabular-nums">
+                  Your browser re-derived all {rerun.winners} winners from the seed and entry
+                  list in {rerun.ms} ms — identical to the published result.
                 </div>
               </div>
             )}
             {rerun.kind === "mismatch" && (
               <div
-                className="flex items-center gap-3 rounded-lg border border-destructive/40 bg-destructive/10 p-4"
+                className="flex items-center gap-4 rounded-xl border border-destructive/40 bg-destructive/5 p-4"
                 data-testid="rerun-result"
               >
-                <ShieldAlert className="size-6 shrink-0 text-destructive" />
-                <div>
-                  <div className="text-base font-semibold">MISMATCH</div>
-                  <div className="text-sm text-muted-foreground">{rerun.detail}</div>
-                </div>
+                <span className="stamp shrink-0 -rotate-2 text-destructive">MISMATCH</span>
+                <div className="text-sm text-muted-foreground">{rerun.detail}</div>
               </div>
             )}
           </div>
@@ -186,7 +183,7 @@ export function LotteryProof({ releaseId }: { releaseId: string }) {
           <summary className="cursor-pointer select-none">
             Public entry list ({proof.entryIds.length} entry ids)
           </summary>
-          <ul className="mt-2 max-h-48 space-y-0.5 overflow-y-auto font-mono">
+          <ul className="mt-2 max-h-48 space-y-0.5 overflow-y-auto rounded-md border border-dashed bg-muted/40 p-2.5 font-mono">
             {proof.entryIds.map((id) => (
               <li key={id}>
                 {id}
