@@ -21,9 +21,9 @@ function formatEventDate(iso: string): string {
 
 export default async function ReleasePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const state = await getReleaseState(id);
+  // One latency phase: state's internal lookups and the branding row run together.
+  const [state, meta] = await Promise.all([getReleaseState(id), getReleaseMeta(id)]);
   if (!state) notFound();
-  const meta = await getReleaseMeta(id);
   const isLottery = state.mode === "lottery";
 
   return (
