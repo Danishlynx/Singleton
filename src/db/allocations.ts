@@ -154,3 +154,26 @@ export async function isOnWaitlist(releaseId: string, claimantId: string): Promi
   );
   return Boolean(row);
 }
+
+/**
+ * 1-based waitlist position, derived from (joined_at, id) order — same
+ * derive-not-store discipline as allocation ranks. Undefined if not on the list.
+ */
+export async function getWaitlistPosition(
+  releaseId: string,
+  claimantId: string,
+): Promise<number | undefined> {
+  const row = await queryOne<{ pos: number }>(
+    `SELECT (1 + count(*))::int AS pos
+       FROM waitlist w2, waitlist me
+      WHERE me.release_id = $1 AND me.claimant_id = $2
+        AND w2.release_id = $1
+        AND (w2.joined_at < me.joined_at
+             OR (w2.joined_at = me.joined_at AND w2.id < me.id))`,
+    [releaseId, claimantId],
+  );
+  // The self-join yields no rows when `me` doesn't exist; count() over zero rows
+  // still returns one row with pos=1, so verify membership explicitly.
+  if (!row) return undefined;
+  return (await isOnWaitlist(releaseId, claimantId)) ? row.pos : undefined;
+}

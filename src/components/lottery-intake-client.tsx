@@ -46,7 +46,37 @@ export function LotteryIntakeClient({ initial }: { initial: ReleaseStateDTO }) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [entryId, setEntryId] = useState<string | null>(null);
   const [result, setResult] = useState<EntryResult | null>(null);
+  const [lookupId, setLookupId] = useState("");
   const resultRequested = useRef(false);
+
+  // Cross-device result lookup by a pasted entry id (bearer capability).
+  async function checkEntry() {
+    const id = lookupId.trim();
+    if (!id) return;
+    try {
+      const res = await fetch(`/api/entries/${encodeURIComponent(id)}`, { cache: "no-store" });
+      if (!res.ok) {
+        toast.error("No entry found with that id.");
+        return;
+      }
+      const data = (await res.json()) as EntryResult;
+      if (data.selected && data.allocationId) {
+        localStorage.setItem(storageKey(initial.releaseId), id);
+        setEntryId(id);
+        setResult(data);
+        toast.success("That entry was selected — opening the result.");
+      } else if (data.selected === false) {
+        localStorage.setItem(storageKey(initial.releaseId), id);
+        setEntryId(id);
+        setResult(data);
+        toast("That entry was not selected this time.");
+      } else {
+        toast("The draw for that entry hasn't run yet.");
+      }
+    } catch {
+      toast.error("Could not check that entry right now.");
+    }
+  }
 
   const opensAt = Date.parse(state.opensAt);
   const closesAt = state.entryClosesAt ? Date.parse(state.entryClosesAt) : Number.NaN;
@@ -171,12 +201,25 @@ export function LotteryIntakeClient({ initial }: { initial: ReleaseStateDTO }) {
             </p>
           </div>
         ) : (
-          <div className="rounded-lg border bg-muted/40 p-5 text-center">
+          <div className="space-y-3 rounded-lg border bg-muted/40 p-5 text-center">
             <h3 className="font-medium">The draw has run</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {Math.min(state.capacity, state.entrantCount ?? 0)} of {state.entrantCount} entries
               were selected.
             </p>
+            {/* Cross-device recovery: entries live in the browser that made them,
+                so let anyone check a saved entry id here. */}
+            <div className="flex gap-2">
+              <Input
+                placeholder="Paste your entry id to check"
+                value={lookupId}
+                onChange={(e) => setLookupId(e.target.value)}
+                className="font-mono text-xs"
+              />
+              <Button variant="secondary" onClick={checkEntry} disabled={!lookupId.trim()}>
+                Check
+              </Button>
+            </div>
           </div>
         )}
         <Button asChild variant="secondary" className="w-full">
@@ -279,6 +322,17 @@ export function LotteryIntakeClient({ initial }: { initial: ReleaseStateDTO }) {
         <p className="text-center text-xs text-muted-foreground">
           Entering early gives no advantage — every entry in the window has equal odds.
         </p>
+
+        {entryId && (
+          <div className="rounded-lg border bg-muted/40 p-3 text-center text-xs">
+            <p className="text-muted-foreground">
+              Your entry id — save it to check your result from any device:
+            </p>
+            <p className="mt-1 break-all font-mono" data-testid="my-entry-id">
+              {entryId}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Fairness commitment */}

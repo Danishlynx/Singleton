@@ -65,7 +65,7 @@ export function Pricing() {
                 <CardTitle className="text-base">{t.name}</CardTitle>
                 {t.highlight && (
                   <Badge className="rounded-full" variant="default">
-                    most common
+                    Most common
                   </Badge>
                 )}
               </div>

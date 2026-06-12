@@ -11,6 +11,9 @@ export function SiteHeader() {
           Singleton
         </Link>
         <nav className="flex items-center gap-5 text-sm text-muted-foreground">
+          <Link href="/#releases" className="transition-colors hover:text-foreground">
+            Releases
+          </Link>
           <Link href="/admin" className="transition-colors hover:text-foreground">
             Admin
           </Link>

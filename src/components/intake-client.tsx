@@ -41,12 +41,17 @@ function formatCountdown(ms: number): string {
   return `${pad(hours)}:${pad(mins)}:${pad(secs)}`;
 }
 
+function waitlistKey(releaseId: string): string {
+  return `singleton_waitlist_${releaseId}`;
+}
+
 export function IntakeClient({ initial }: { initial: ReleaseStateDTO }) {
   const router = useRouter();
   const [state, setState] = useState<ReleaseStateDTO>(initial);
   const [now, setNow] = useState<number>(() => Date.parse(initial.opensAt) - 1); // SSR-stable-ish
   const [claimantId, setClaimantId] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
+  const [waitlistPos, setWaitlistPos] = useState<number | null>(null);
   const idemRef = useRef<Map<string, string>>(new Map());
 
   const opensAtMs = Date.parse(state.opensAt);
@@ -57,6 +62,17 @@ export function IntakeClient({ initial }: { initial: ReleaseStateDTO }) {
     const id = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(id);
   }, []);
+
+  // Restore a previous waitlist membership for this release: refresh/back must
+  // not erase the one thing the sold-out visitor has to hold onto.
+  useEffect(() => {
+    const stored = localStorage.getItem(waitlistKey(initial.releaseId));
+    if (stored) {
+      const pos = Number(stored);
+      setWaitlistPos(Number.isFinite(pos) && pos > 0 ? pos : null);
+      setPhase("sold_out");
+    }
+  }, [initial.releaseId]);
 
   // Poll live state so every viewer sees the same remaining count (strong consistency).
   const poll = useCallback(async () => {
@@ -121,6 +137,7 @@ export function IntakeClient({ initial }: { initial: ReleaseStateDTO }) {
         status?: string;
         allocationId?: string;
         opensAt?: string;
+        position?: number | null;
       };
 
       if (res.ok && data.status === "allocated" && data.allocationId) {
@@ -131,6 +148,9 @@ export function IntakeClient({ initial }: { initial: ReleaseStateDTO }) {
       }
       if (data.status === "sold_out") {
         setPhase("sold_out");
+        const pos = typeof data.position === "number" ? data.position : null;
+        setWaitlistPos(pos);
+        localStorage.setItem(waitlistKey(initial.releaseId), String(pos ?? 0));
         void poll();
         toast("All slots are taken — you're on the waitlist.", {
           description: "We'll honor first-come order if a slot frees up.",
@@ -243,6 +263,17 @@ export function IntakeClient({ initial }: { initial: ReleaseStateDTO }) {
           {phase === "idle" &&
             (soldOut ? "Join the waitlist" : isOpen ? "Claim a slot" : "Opens soon")}
         </Button>
+
+        {phase === "sold_out" && (
+          <div className="rounded-lg border bg-muted/40 p-4 text-center text-sm">
+            <p className="font-medium">
+              You&apos;re on the waitlist{waitlistPos ? ` — position #${waitlistPos}` : ""}
+            </p>
+            <p className="mt-1 text-muted-foreground">
+              First-come order is honored if a slot frees up. This stays here when you come back.
+            </p>
+          </div>
+        )}
 
         <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
           <ShieldCheck className="size-3.5" />

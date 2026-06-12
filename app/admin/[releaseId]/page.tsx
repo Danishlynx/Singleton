@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Activity, Loader2, ShieldCheck, Zap } from "lucide-react";
 
@@ -44,7 +45,10 @@ function Stat({
   return (
     <div className="rounded-lg border p-4">
       <div className="text-xs text-muted-foreground">{label}</div>
-      <div className={`mt-1 tabular-nums text-2xl font-semibold ${color}`}>{value}</div>
+      {/* break-words + responsive size: the p50/p95/p99 triple overflows on mobile otherwise */}
+      <div className={`mt-1 break-words text-xl font-semibold tabular-nums sm:text-2xl ${color}`}>
+        {value}
+      </div>
     </div>
   );
 }
@@ -93,7 +97,9 @@ function Monitor({ token, releaseId }: { token: string; releaseId: string }) {
     }
   }
 
-  if (!state) return null;
+  if (!state) {
+    return <Skeleton className="h-44 w-full rounded-xl" />;
+  }
   const pct = state.capacity > 0 ? (state.allocated / state.capacity) * 100 : 0;
   const isLottery = state.mode === "lottery";
   const windowClosed = state.entryClosesAt ? Date.parse(state.entryClosesAt) <= Date.now() : false;
@@ -128,7 +134,7 @@ function Monitor({ token, releaseId }: { token: string; releaseId: string }) {
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <Progress value={pct} />
+        <Progress value={pct} aria-label="Share of slots allocated" />
         {isLottery && !state.drawn && (
           <Button
             onClick={runDraw}
@@ -152,12 +158,20 @@ function Monitor({ token, releaseId }: { token: string; releaseId: string }) {
             Draw complete — winners are on the public ledger with the revealed seed.
           </p>
         )}
-        <Link
-          className="text-xs text-muted-foreground underline underline-offset-4"
-          href={`/verify/${releaseId}`}
-        >
-          Open public ledger
-        </Link>
+        <div className="flex gap-4 text-xs">
+          <Link
+            className="text-muted-foreground underline underline-offset-4 hover:text-foreground"
+            href={`/releases/${releaseId}`}
+          >
+            View public page
+          </Link>
+          <Link
+            className="text-muted-foreground underline underline-offset-4 hover:text-foreground"
+            href={`/verify/${releaseId}`}
+          >
+            Open public ledger
+          </Link>
+        </div>
       </CardContent>
     </Card>
   );
