@@ -60,6 +60,20 @@ const SHOWCASE: ShowcaseSpec[] = [
     claims: 17,
   },
   {
+    provider: "CloudConf Europe",
+    title: "CloudConf 2026: serverless databases workshop",
+    capacity: 150,
+    shardCount: 32,
+    mode: "fcfs",
+    image:
+      "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=2000&q=85&auto=format&fit=crop",
+    description:
+      "150 hands-on lab seats for the serverless databases track. Fittingly, every seat here is allocated by one ACID transaction.",
+    venue: "Hall 7, RAI Amsterdam",
+    eventInDays: 21,
+    claims: 38,
+  },
+  {
     provider: "Sunrise Community Clinic",
     title: "Free flu vaccination, Saturday block",
     capacity: 120,
@@ -73,6 +87,21 @@ const SHOWCASE: ShowcaseSpec[] = [
     venue: "Sunrise Clinic, Hall B",
     eventInDays: 4,
     entries: 28,
+  },
+  {
+    provider: "Harbour Hack Collective",
+    title: "Harbour Hackathon 2026 team slots",
+    capacity: 80,
+    shardCount: 16,
+    mode: "lottery",
+    windowDays: 4,
+    image:
+      "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=2000&q=85&auto=format&fit=crop",
+    description:
+      "80 team slots for a weekend of building. Enter any time this week; the draw treats every team the same.",
+    venue: "Innovation Dock, Rotterdam",
+    eventInDays: 40,
+    entries: 57,
   },
   {
     provider: "Form & Field",
@@ -89,6 +118,20 @@ const SHOWCASE: ShowcaseSpec[] = [
     entries: 61,
   },
   {
+    provider: "Northside Animal Shelter",
+    title: "Puppy adoption Saturday appointments",
+    capacity: 40,
+    shardCount: 8,
+    mode: "fcfs",
+    image:
+      "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=2000&q=85&auto=format&fit=crop",
+    description:
+      "40 meet-and-adopt appointments for Saturday morning. First come, first served, and the shelter can prove nobody jumped the queue.",
+    venue: "Northside Shelter, Hall 2",
+    eventInDays: 5,
+    claims: 11,
+  },
+  {
     provider: "Åsen Supper Club",
     title: "Chef's table, one night only",
     capacity: 12,
@@ -100,6 +143,21 @@ const SHOWCASE: ShowcaseSpec[] = [
     venue: "Åsen Supper Club, Oslo",
     eventInDays: 9,
     claims: 7,
+  },
+  {
+    provider: "Hilltop Observatory",
+    title: "Stargazing night: telescope sessions",
+    capacity: 60,
+    shardCount: 8,
+    mode: "lottery",
+    windowDays: 5,
+    image:
+      "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=2000&q=85&auto=format&fit=crop",
+    description:
+      "60 telescope slots under a dark sky, already oversubscribed. Winners are drawn from the whole window, not from whoever clicked fastest.",
+    venue: "Hilltop Observatory ridge deck",
+    eventInDays: 18,
+    entries: 96,
   },
   {
     provider: "City Marathon Foundation",

@@ -28,9 +28,13 @@ export const DEMO_SEED_PATTERNS = [
   "Spring vaccination slots",
   "Midnight Frequencies%",
   "GameDev%",
+  "CloudConf%",
   "Free flu vaccination%",
+  "Harbour Hackathon%",
   "FF-01%",
+  "Puppy adoption%",
   "Chef's table%",
+  "Stargazing%",
   "City Marathon%",
 ];
 
