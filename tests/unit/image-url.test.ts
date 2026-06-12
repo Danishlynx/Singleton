@@ -1,22 +1,22 @@
-import { describe, it, expect } from "vitest";
+﻿import { describe, it, expect } from "vitest";
 import { normalizeImageUrl } from "@/lib/image-url";
 
 describe("normalizeImageUrl", () => {
   it("rewrites Google Drive /file/d/<id>/view share links", () => {
     expect(
       normalizeImageUrl("https://drive.google.com/file/d/1AbC_dEf-123/view?usp=drive_link"),
-    ).toBe("https://lh3.googleusercontent.com/d/1AbC_dEf-123");
+    ).toBe("https://drive.google.com/thumbnail?id=1AbC_dEf-123&sz=w1600");
   });
 
   it("rewrites Google Drive open?id= links", () => {
     expect(normalizeImageUrl("https://drive.google.com/open?id=XYZ789")).toBe(
-      "https://lh3.googleusercontent.com/d/XYZ789",
+      "https://drive.google.com/thumbnail?id=XYZ789&sz=w1600",
     );
   });
 
   it("rewrites Google Drive uc?id= links", () => {
     expect(normalizeImageUrl("https://drive.google.com/uc?id=QQQ&export=view")).toBe(
-      "https://lh3.googleusercontent.com/d/QQQ",
+      "https://drive.google.com/thumbnail?id=QQQ&sz=w1600",
     );
   });
 

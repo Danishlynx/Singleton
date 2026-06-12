@@ -22,6 +22,7 @@ import { normalizeImageUrl } from "@/lib/image-url";
  */
 function PosterPreview({ url }: { url: string }) {
   const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0); // bump to force a fresh load
   const trimmed = url.trim();
   const normalized = trimmed ? normalizeImageUrl(trimmed) : "";
 
@@ -36,7 +37,19 @@ function PosterPreview({ url }: { url: string }) {
       {failed ? (
         <p className="text-xs text-destructive">
           Couldn&apos;t load that image — check the link is a public image (for Drive: shared as
-          &ldquo;anyone with the link&rdquo;).
+          &ldquo;anyone with the link&rdquo;).{" "}
+          <button
+            type="button"
+            className="underline underline-offset-2"
+            onClick={() => {
+              // Common sequence: paste link first, make the file public after.
+              // Retry re-attempts the same URL with a cache-busting param.
+              setAttempt((a) => a + 1);
+              setFailed(false);
+            }}
+          >
+            Just shared it? Retry
+          </button>
         </p>
       ) : (
         <div className="relative h-28 w-full overflow-hidden rounded-md border">
@@ -44,7 +57,7 @@ function PosterPreview({ url }: { url: string }) {
               remote URL; the optimizer pipeline is exercised on the public pages. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={normalized}
+            src={attempt > 0 ? `${normalized}${normalized.includes("?") ? "&" : "?"}r=${attempt}` : normalized}
             alt="Poster preview"
             className="h-full w-full object-cover"
             onError={() => setFailed(true)}
