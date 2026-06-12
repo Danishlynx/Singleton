@@ -6,6 +6,7 @@ import { IntakeClient } from "@/components/intake-client";
 import { LotteryIntakeClient } from "@/components/lottery-intake-client";
 import { PosterImage } from "@/components/poster-image";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, CalendarDays, MapPin } from "lucide-react";
 
@@ -86,6 +87,13 @@ export default async function ReleasePage({ params }: { params: Promise<{ id: st
             )}
           </CardContent>
         </Card>
+        {/* Repeated on purpose: after claiming or entering, the visitor is at
+            the bottom of the card and the top link is off-screen. */}
+        <Button asChild variant="ghost" className="mt-4 w-full">
+          <Link href="/#releases">
+            <ArrowLeft className="size-4" /> Back to all releases
+          </Link>
+        </Button>
       </main>
       <SiteFooter />
     </>
