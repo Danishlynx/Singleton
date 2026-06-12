@@ -1,13 +1,12 @@
 import Link from "next/link";
+import { SingletonMark } from "@/components/logo";
 
 export function SiteHeader() {
   return (
     <header className="border-b">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2.5 font-semibold tracking-tight">
-          <span className="inline-flex size-6 items-center justify-center rounded-md bg-primary font-mono text-xs text-primary-foreground">
-            S
-          </span>
+          <SingletonMark className="size-6" />
           Singleton
         </Link>
         <nav className="flex items-center gap-5 text-sm text-muted-foreground">
