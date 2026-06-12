@@ -15,6 +15,9 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
  */
 export default defineConfig({
   testDir: "./tests/e2e",
+  // Sweep the "E2E ..." releases the specs create, so the public landing never
+  // accumulates posterless test debris after a run.
+  globalTeardown: "./tests/e2e/global-teardown.ts",
   fullyParallel: true,
   // WAN E2E against a real DSQL cluster: individual flows legitimately take
   // 30s+ (the lottery test waits out a 15s entry window), and parallel specs
