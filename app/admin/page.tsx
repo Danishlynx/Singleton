@@ -13,6 +13,52 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ArrowRight, Loader2, Plus } from "lucide-react";
+import { normalizeImageUrl } from "@/lib/image-url";
+
+/**
+ * Live poster preview: shows exactly what will render publicly, including the
+ * share-link normalization, BEFORE the release is created — so a private Drive
+ * file or dead URL is caught here instead of on the live intake page.
+ */
+function PosterPreview({ url }: { url: string }) {
+  const [failed, setFailed] = useState(false);
+  const trimmed = url.trim();
+  const normalized = trimmed ? normalizeImageUrl(trimmed) : "";
+
+  useEffect(() => {
+    setFailed(false); // a new URL gets a fresh chance
+  }, [normalized]);
+
+  if (!trimmed || !trimmed.startsWith("https://")) return null;
+
+  return (
+    <div className="space-y-1">
+      {failed ? (
+        <p className="text-xs text-destructive">
+          Couldn&apos;t load that image — check the link is a public image (for Drive: shared as
+          &ldquo;anyone with the link&rdquo;).
+        </p>
+      ) : (
+        <div className="relative h-28 w-full overflow-hidden rounded-md border">
+          {/* Plain <img>: this is a transient admin-side preview of an arbitrary
+              remote URL; the optimizer pipeline is exercised on the public pages. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={normalized}
+            alt="Poster preview"
+            className="h-full w-full object-cover"
+            onError={() => setFailed(true)}
+          />
+        </div>
+      )}
+      {normalized !== trimmed && !failed && (
+        <p className="text-xs text-muted-foreground">
+          Share link detected — will be stored as the direct image URL.
+        </p>
+      )}
+    </div>
+  );
+}
 
 function CreateRelease({ token, onCreated }: { token: string; onCreated: () => void }) {
   const [title, setTitle] = useState("Spring vaccination slots");
@@ -174,6 +220,11 @@ function CreateRelease({ token, onCreated }: { token: string; onCreated: () => v
             value={imageUrl}
             onChange={(e) => setImageUrl(e.target.value)}
           />
+          <p className="text-xs text-muted-foreground">
+            Google Drive / Dropbox share links are converted automatically — the file must be
+            shared as &ldquo;anyone with the link.&rdquo;
+          </p>
+          <PosterPreview url={imageUrl} />
         </div>
         <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="description">
