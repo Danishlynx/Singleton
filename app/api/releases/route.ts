@@ -25,6 +25,15 @@ const CreateBody = z.object({
       entryClosesAt: z.coerce.date(),
     })
     .optional(),
+  // Vendor branding (all optional; rendered with neutral fallbacks when absent).
+  meta: z
+    .object({
+      imageUrl: z.url().startsWith("https://").max(2000).optional(),
+      description: z.string().trim().max(1000).optional(),
+      venue: z.string().trim().max(200).optional(),
+      eventAt: z.coerce.date().optional(),
+    })
+    .optional(),
 });
 
 /** Admin: create a release (status 'open'; opens_at gates claiming). */
@@ -45,7 +54,7 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
-  const { title, capacity, shardCount, opensAt, providerName, lottery } = parsed.data;
+  const { title, capacity, shardCount, opensAt, providerName, lottery, meta } = parsed.data;
   const effectiveOpensAt = opensAt ?? new Date();
 
   if (lottery && lottery.entryClosesAt.getTime() <= effectiveOpensAt.getTime()) {
@@ -64,6 +73,11 @@ export async function POST(req: NextRequest) {
     opensAt: effectiveOpensAt,
     status: "open",
   });
+
+  if (meta && (meta.imageUrl || meta.description || meta.venue || meta.eventAt)) {
+    const { upsertReleaseMeta } = await import("@/db/release-meta");
+    await upsertReleaseMeta(release.id, meta);
+  }
 
   // Mode B: commit the seed at creation. Only the HASH is ever serialized here;
   // the seed itself stays server-side until the draw reveals it.

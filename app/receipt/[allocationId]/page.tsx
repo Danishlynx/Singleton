@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getAllocationWithRank } from "@/db/allocations";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { AllocationReceipt } from "@/components/v0/allocation-receipt";
+import { TicketQr } from "@/components/ticket-qr";
 import { Button } from "@/components/ui/button";
 
 export const runtime = "nodejs";
@@ -30,6 +31,7 @@ export default async function ReceiptPage({
           allocationId={receipt.allocationId}
           verifyHref={`/verify/${receipt.releaseId}`}
         />
+        <TicketQr allocationId={receipt.allocationId} />
         {receipt.lotteryEntryId && (
           <div className="rounded-lg border bg-muted/40 p-4 text-sm">
             <p className="font-medium">You entered the window — selected</p>

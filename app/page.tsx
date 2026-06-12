@@ -1,19 +1,30 @@
+import Image from "next/image";
 import Link from "next/link";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { Hero } from "@/components/v0/hero";
 import { Principles } from "@/components/v0/principles";
+import { Pricing } from "@/components/pricing";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { listReleases, getReleaseState, type ReleaseState } from "@/db/releases";
+import { getReleaseMetaMap, type ReleaseMeta } from "@/db/release-meta";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function loadReleases(): Promise<ReleaseState[] | null> {
+type ListedRelease = ReleaseState & { meta: ReleaseMeta | null };
+
+async function loadReleases(): Promise<ListedRelease[] | null> {
   try {
     const releases = await listReleases();
-    const states = await Promise.all(releases.slice(0, 12).map((r) => getReleaseState(r.id)));
-    return states.filter((s): s is ReleaseState => Boolean(s));
+    const shown = releases.slice(0, 12);
+    const [states, metas] = await Promise.all([
+      Promise.all(shown.map((r) => getReleaseState(r.id))),
+      getReleaseMetaMap(shown.map((r) => r.id)),
+    ]);
+    return states
+      .filter((s): s is ReleaseState => Boolean(s))
+      .map((s) => ({ ...s, meta: metas.get(s.releaseId) ?? null }));
   } catch {
     return null; // database not configured / unreachable
   }
@@ -50,19 +61,45 @@ export default async function Home() {
             <div className="grid gap-4 sm:grid-cols-2">
               {releases.map((s) => (
                 <Link key={s.releaseId} href={`/releases/${s.releaseId}`} className="group">
-                  <Card className="transition-colors group-hover:border-primary/50">
+                  <Card className="overflow-hidden pt-0 transition-colors group-hover:border-primary/50">
+                    {s.meta?.imageUrl ? (
+                      <div className="relative h-28 w-full">
+                        <Image
+                          src={s.meta.imageUrl}
+                          alt=""
+                          fill
+                          sizes="(max-width: 640px) 100vw, 480px"
+                          className="object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className="h-10 w-full bg-gradient-to-r from-primary/10 via-accent to-primary/5"
+                        aria-hidden="true"
+                      />
+                    )}
                     <CardHeader>
                       <div className="flex items-center justify-between gap-2">
                         <CardTitle className="text-base">{s.title}</CardTitle>
-                        <Badge
-                          variant={s.remaining > 0 ? "default" : "secondary"}
-                          className="rounded-full"
-                        >
-                          {s.remaining > 0 ? "Open" : "Sold out"}
-                        </Badge>
+                        <div className="flex shrink-0 gap-1.5">
+                          {s.mode === "lottery" && (
+                            <Badge variant="secondary" className="rounded-full">
+                              lottery
+                            </Badge>
+                          )}
+                          <Badge
+                            variant={s.remaining > 0 ? "default" : "secondary"}
+                            className="rounded-full"
+                          >
+                            {s.remaining > 0 ? "Open" : "Sold out"}
+                          </Badge>
+                        </div>
                       </div>
                       <CardDescription className="tabular-nums">
-                        {s.remaining} of {s.capacity} remaining
+                        {s.mode === "lottery"
+                          ? `${s.entrantCount ?? 0} entries · ${s.capacity} slots`
+                          : `${s.remaining} of ${s.capacity} remaining`}
+                        {s.meta?.venue ? ` · ${s.meta.venue}` : ""}
                       </CardDescription>
                     </CardHeader>
                   </Card>
@@ -71,6 +108,8 @@ export default async function Home() {
             </div>
           )}
         </section>
+
+        <Pricing />
       </main>
       <SiteFooter />
     </>

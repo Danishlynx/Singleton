@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
   // native require at runtime (Node runtime only — never Edge). `pg` is already in
   // Next's default external list; the DSQL connector is added explicitly.
   serverExternalPackages: ["@aws/aurora-dsql-node-postgres-connector", "pg"],
+  // Vendor poster images are arbitrary https URLs supplied per release.
+  images: {
+    remotePatterns: [{ protocol: "https", hostname: "**" }],
+  },
 };
 
 export default nextConfig;
