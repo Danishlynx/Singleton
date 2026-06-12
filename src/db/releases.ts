@@ -100,15 +100,25 @@ export interface ReleaseState {
  * Live state for the intake page / state API. `remaining` is the source of truth
  * (SUM of shard remainders); `allocated = capacity - remaining` because every shard
  * decrement is committed atomically with exactly one allocation insert.
+ *
+ * All four lookups run CONCURRENTLY (one round trip of latency, not four): this
+ * endpoint is polled every 1.5s by every open intake page, and sequential queries
+ * multiply WAN latency. The unconditional entries count is a no-op for FCFS
+ * releases (empty table scan by indexed release_id).
  */
 export async function getReleaseState(id: string): Promise<ReleaseState | undefined> {
-  const rel = await getRelease(id);
+  const { getPublicLotteryState, countEntries } = await import("@/db/lottery");
+  const [rel, sumRows, lottery, entrantCount] = await Promise.all([
+    getRelease(id),
+    query<{ remaining: number }>(
+      "SELECT COALESCE(SUM(remaining), 0)::int AS remaining FROM release_shards WHERE release_id = $1",
+      [id],
+    ),
+    getPublicLotteryState(id),
+    countEntries(id),
+  ]);
   if (!rel) return undefined;
-  const rows = await query<{ remaining: number }>(
-    "SELECT COALESCE(SUM(remaining), 0)::int AS remaining FROM release_shards WHERE release_id = $1",
-    [id],
-  );
-  const remaining = rows[0]?.remaining ?? 0;
+  const remaining = sumRows[0]?.remaining ?? 0;
   const opensAt = rel.opens_at instanceof Date ? rel.opens_at : new Date(rel.opens_at);
   const base: ReleaseState = {
     releaseId: id,
@@ -121,12 +131,7 @@ export async function getReleaseState(id: string): Promise<ReleaseState | undefi
     isOpen: rel.status === "open" && opensAt.getTime() <= Date.now(),
     mode: "fcfs",
   };
-
-  // Mode B: a lottery_config row switches the mode and adds public lottery fields.
-  const { getPublicLotteryState, countEntries } = await import("@/db/lottery");
-  const lottery = await getPublicLotteryState(id);
   if (!lottery) return base;
-  const entrantCount = await countEntries(id);
   return {
     ...base,
     mode: "lottery",
@@ -135,4 +140,74 @@ export async function getReleaseState(id: string): Promise<ReleaseState | undefi
     drawn: lottery.drawnAt !== null,
     seedHash: lottery.seedHash,
   };
+}
+
+export type ReleaseListing = ReleaseState & {
+  meta: import("@/db/release-meta").ReleaseMeta | null;
+};
+
+/**
+ * Batched listing for the landing page: a FIXED number of round trips (two)
+ * regardless of how many releases exist. The previous per-release fan-out
+ * (getReleaseState × N, each itself multiple queries) measured 5.4s over WAN;
+ * this is one releases query + four parallel scoped aggregates (incl. branding).
+ */
+export async function listReleaseStates(limit = 12): Promise<ReleaseListing[]> {
+  const { getReleaseMetaMap } = await import("@/db/release-meta");
+  const rels = await query<Release>(
+    `SELECT ${RELEASE_COLUMNS} FROM releases ORDER BY created_at DESC LIMIT ${Math.max(1, Math.min(50, limit))}`,
+  );
+  if (rels.length === 0) return [];
+  const ids = rels.map((r) => r.id);
+  const params = ids.map((_, i) => `$${i + 1}`).join(", ");
+
+  const [metas, sums, lotteries, entryCounts] = await Promise.all([
+    getReleaseMetaMap(ids),
+    query<{ release_id: string; remaining: number }>(
+      `SELECT release_id, COALESCE(SUM(remaining), 0)::int AS remaining
+         FROM release_shards WHERE release_id IN (${params}) GROUP BY release_id`,
+      [...ids],
+    ),
+    query<{ release_id: string; entry_closes_at: Date; seed_hash: string; drawn_at: Date | null }>(
+      `SELECT release_id, entry_closes_at, seed_hash, drawn_at
+         FROM lottery_config WHERE release_id IN (${params})`,
+      [...ids],
+    ),
+    query<{ release_id: string; n: number }>(
+      `SELECT release_id, count(*)::int AS n
+         FROM entries WHERE release_id IN (${params}) GROUP BY release_id`,
+      [...ids],
+    ),
+  ]);
+
+  const sumBy = new Map(sums.map((s) => [s.release_id, s.remaining]));
+  const lotteryBy = new Map(lotteries.map((l) => [l.release_id, l]));
+  const entriesBy = new Map(entryCounts.map((e) => [e.release_id, e.n]));
+
+  return rels.map((rel) => {
+    const remaining = sumBy.get(rel.id) ?? 0;
+    const opensAt = rel.opens_at instanceof Date ? rel.opens_at : new Date(rel.opens_at);
+    const base: ReleaseListing = {
+      releaseId: rel.id,
+      title: rel.title,
+      capacity: rel.capacity,
+      remaining,
+      allocated: rel.capacity - remaining,
+      status: rel.status,
+      opensAt: opensAt.toISOString(),
+      isOpen: rel.status === "open" && opensAt.getTime() <= Date.now(),
+      mode: "fcfs",
+      meta: metas.get(rel.id) ?? null,
+    };
+    const lottery = lotteryBy.get(rel.id);
+    if (!lottery) return base;
+    return {
+      ...base,
+      mode: "lottery" as const,
+      entrantCount: entriesBy.get(rel.id) ?? 0,
+      entryClosesAt: new Date(lottery.entry_closes_at).toISOString(),
+      drawn: lottery.drawn_at !== null,
+      seedHash: lottery.seed_hash,
+    };
+  });
 }

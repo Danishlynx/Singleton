@@ -1,16 +1,15 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createProvider, createRelease, getReleaseState, listReleases } from "@/db/releases";
+import { createProvider, createRelease, listReleaseStates } from "@/db/releases";
 import { isAdminRequest } from "@/lib/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** Public: list releases with live remaining counts. */
+/** Public: list releases with live remaining counts (batched — fixed round trips). */
 export async function GET() {
-  const releases = await listReleases();
-  const states = await Promise.all(releases.map((r) => getReleaseState(r.id)));
-  return NextResponse.json({ releases: states.filter(Boolean) });
+  const releases = await listReleaseStates(50);
+  return NextResponse.json({ releases });
 }
 
 const CreateBody = z.object({

@@ -6,25 +6,15 @@ import { Principles } from "@/components/v0/principles";
 import { Pricing } from "@/components/pricing";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { listReleases, getReleaseState, type ReleaseState } from "@/db/releases";
-import { getReleaseMetaMap, type ReleaseMeta } from "@/db/release-meta";
+import { listReleaseStates, type ReleaseListing } from "@/db/releases";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type ListedRelease = ReleaseState & { meta: ReleaseMeta | null };
-
-async function loadReleases(): Promise<ListedRelease[] | null> {
+async function loadReleases(): Promise<ReleaseListing[] | null> {
   try {
-    const releases = await listReleases();
-    const shown = releases.slice(0, 12);
-    const [states, metas] = await Promise.all([
-      Promise.all(shown.map((r) => getReleaseState(r.id))),
-      getReleaseMetaMap(shown.map((r) => r.id)),
-    ]);
-    return states
-      .filter((s): s is ReleaseState => Boolean(s))
-      .map((s) => ({ ...s, meta: metas.get(s.releaseId) ?? null }));
+    // Batched: two DB round trips total regardless of release count (incl. branding).
+    return await listReleaseStates(12);
   } catch {
     return null; // database not configured / unreachable
   }
