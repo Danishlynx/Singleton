@@ -34,7 +34,7 @@ export default async function ReceiptPage({
         <TicketQr allocationId={receipt.allocationId} />
         {receipt.lotteryEntryId && (
           <div className="rounded-lg border bg-muted/40 p-4 text-sm">
-            <p className="font-medium">You entered the window — selected</p>
+            <p className="font-medium">You entered the window and were selected</p>
             <p className="mt-1 text-muted-foreground">
               Your entry{" "}
               <span className="font-mono text-xs" data-testid="receipt-entry-id">

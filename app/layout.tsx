@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Singleton — fair, no-oversell allocation",
+  title: "Singleton: fair, no-oversell allocation",
   description: "Provably-fair, no-oversell allocation of scarce slots on Amazon Aurora DSQL.",
 };
 

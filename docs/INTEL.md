@@ -496,7 +496,7 @@ const { getMode } = await import("@/db/lottery");
 if ((await getMode(releaseId)) === "lottery") {
   throw new ClaimError(
     "lottery_mode",
-    "this release uses a windowed lottery — enter the draw instead of claiming",
+    "this release uses a windowed lottery; enter the draw instead of claiming",
   );
 }
 ```
@@ -750,7 +750,7 @@ The claim button is a five-state machine:
 type Phase = "idle" | "claiming" | "retrying" | "secured" | "sold_out";
 ```
 
-`doClaim` runs a bounded retry loop (`maxClientRetries = 4`, so five attempts total). The server returns 503 when an OCC burst exhausts its server-side retries; the client treats that as "busy, not failed," shows the honest label *Busy — retrying fairly…*, sleeps `500 + attempt * 250` ms, and tries again with the **same** idempotency key. Terminal statuses (`allocated`, `sold_out`, `not_open`) exit the loop immediately; a network error resets to `idle` rather than retrying, because an opaque failure could mean the request landed and a blind retry with a fresh key would double-claim.
+`doClaim` runs a bounded retry loop (`maxClientRetries = 4`, so five attempts total). The server returns 503 when an OCC burst exhausts its server-side retries; the client treats that as "busy, not failed," shows the honest label *Busy, retrying fairly…*, sleeps `500 + attempt * 250` ms, and tries again with the **same** idempotency key. Terminal statuses (`allocated`, `sold_out`, `not_open`) exit the loop immediately; a network error resets to `idle` rather than retrying, because an opaque failure could mean the request landed and a blind retry with a fresh key would double-claim.
 
 Idempotency keys are kept in a ref, mapped per claimant:
 
@@ -796,7 +796,7 @@ useEffect(() => {
 
 `state` (not `state.drawn`) is in the dependency array on purpose: every 1.5 s poll produces a new object, re-running the effect, so a failed fetch retries naturally on the next tick without a bespoke timer — and a success latches permanently. The earlier version retried only on network errors; treating HTTP errors the same was one of the review fixes.
 
-The pre-draw view shows the live entrant count, a countdown to `entryClosesAt`, and — whenever `seedHash` is present — the fairness commitment block with the hash in monospace and a link to the verify page. The countdown here is information, not pressure; the line under the button is the product's thesis stated to the user: *"Entering early gives no advantage — every entry in the window has equal odds."* The post-draw view renders one of three honest outcomes: selected (with a receipt link), not selected (with the odds spelled out and a pointer to verification), or — for visitors who never entered — a neutral draw summary.
+The pre-draw view shows the live entrant count, a countdown to `entryClosesAt`, and — whenever `seedHash` is present — the fairness commitment block with the hash in monospace and a link to the verify page. The countdown here is information, not pressure; the line under the button is the product's thesis stated to the user: *"Entering early gives no advantage. Every entry in the window has equal odds."* The post-draw view renders one of three honest outcomes: selected (with a receipt link), not selected (with the odds spelled out and a pointer to verification), or — for visitors who never entered — a neutral draw summary.
 
 ### 9.4 The 1.5-second polling model
 
@@ -840,7 +840,7 @@ Auth is intentionally minimal ([src/components/admin/admin-auth.tsx](../src/comp
 Allocation UIs are where dark patterns live: fake scarcity, throbbing countdowns, "3 people are looking at this." Singleton's frontend takes the opposite bet — the system's honesty is the feature, so the UI must never manufacture urgency the database doesn't warrant.
 
 - **Countdowns inform, they do not pressure.** They appear only when a real clock exists (release not yet open; entry window closing) and the lottery copy explicitly defuses urgency: entering early gives no advantage. Nothing pulses, nothing turns red as time runs low.
-- **Honest button states.** *Busy — retrying fairly…* instead of a fake instant success; *Join the waitlist* instead of a dead disabled button; *Not selected this time* with the actual odds instead of a euphemism.
+- **Honest button states.** *Busy, retrying fairly…* instead of a fake instant success; *Join the waitlist* instead of a dead disabled button; *Not selected this time* with the actual odds instead of a euphemism.
 - **One accent color.** [app/globals.css](../app/globals.css) defines a neutral oklch grayscale with a single calm indigo (`--primary: oklch(0.54 0.13 262)`) used for verification ticks, progress, and primary actions; `--destructive` red is reserved for genuine invariant violations (MISMATCH, capacity exceeded) — states that have never occurred against the live cluster. When red appears, it means something.
 - **`motion-safe:` on all animation.** Every spinner is `motion-safe:animate-spin`, so `prefers-reduced-motion` users get a static icon rather than motion they opted out of.
 - **`tabular-nums` on every live number** — remaining counts, countdowns, entrant counts, ledger timestamps, sim metrics — so digits don't jitter horizontally as values tick.

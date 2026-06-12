@@ -64,7 +64,7 @@ export function LotteryIntakeClient({ initial }: { initial: ReleaseStateDTO }) {
         localStorage.setItem(storageKey(initial.releaseId), id);
         setEntryId(id);
         setResult(data);
-        toast.success("That entry was selected — opening the result.");
+        toast.success("That entry was selected. Opening the result.");
       } else if (data.selected === false) {
         localStorage.setItem(storageKey(initial.releaseId), id);
         setEntryId(id);
@@ -197,7 +197,7 @@ export function LotteryIntakeClient({ initial }: { initial: ReleaseStateDTO }) {
             <h3 className="font-medium">Not selected this time</h3>
             <p className="mt-1 text-sm text-muted-foreground">
               {state.capacity} of {state.entrantCount} entries were drawn. Your odds were the
-              same as everyone else&apos;s — you can verify that below.
+              same as everyone else&apos;s, and you can verify that below.
             </p>
           </div>
         ) : (
@@ -224,7 +224,7 @@ export function LotteryIntakeClient({ initial }: { initial: ReleaseStateDTO }) {
         )}
         <Button asChild variant="secondary" className="w-full">
           <Link href={`/verify/${initial.releaseId}`}>
-            <ShieldCheck className="size-4" /> Verify the draw — re-run it yourself
+            <ShieldCheck className="size-4" /> Verify the draw by re-running it yourself
           </Link>
         </Button>
         {entryId && (
@@ -320,13 +320,13 @@ export function LotteryIntakeClient({ initial }: { initial: ReleaseStateDTO }) {
 
         {/* That sentence is the product. */}
         <p className="text-center text-xs text-muted-foreground">
-          Entering early gives no advantage — every entry in the window has equal odds.
+          Entering early gives no advantage. Every entry in the window has equal odds.
         </p>
 
         {entryId && (
           <div className="rounded-xl border border-dashed bg-card p-3 text-center text-xs">
             <p className="text-muted-foreground">
-              Your entry id — save it to check your result from any device:
+              Save your entry id to check your result from any device:
             </p>
             <p className="mt-1 break-all font-mono" data-testid="my-entry-id">
               {entryId}
@@ -341,7 +341,7 @@ export function LotteryIntakeClient({ initial }: { initial: ReleaseStateDTO }) {
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-sm font-medium">
               <ShieldCheck className="size-4 text-accent-foreground" />
-              Fairness commitment — published before entries opened
+              Fairness commitment, published before entries opened
             </div>
             <span className="micro-label shrink-0 text-accent-foreground">Sealed</span>
           </div>

@@ -36,7 +36,7 @@ function PosterPreview({ url }: { url: string }) {
     <div className="space-y-1">
       {failed ? (
         <p className="text-xs text-destructive">
-          Couldn&apos;t load that image — check the link is a public image (for Drive: shared as
+          Couldn&apos;t load that image. Check that the link is a public image (for Drive: shared as
           &ldquo;anyone with the link&rdquo;).{" "}
           <button
             type="button"
@@ -66,7 +66,7 @@ function PosterPreview({ url }: { url: string }) {
       )}
       {normalized !== trimmed && !failed && (
         <p className="text-xs text-muted-foreground">
-          Share link detected — will be stored as the direct image URL.
+          Share link detected. It will be stored as the direct image URL.
         </p>
       )}
     </div>
@@ -169,7 +169,7 @@ function CreateRelease({ token, onCreated }: { token: string; onCreated: () => v
           />
         </div>
         <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="opensAt">Opens at (optional, your local time — shown publicly in UTC)</Label>
+          <Label htmlFor="opensAt">Opens at (optional, your local time, shown publicly in UTC)</Label>
           <Input
             id="opensAt"
             type="datetime-local"
@@ -234,7 +234,7 @@ function CreateRelease({ token, onCreated }: { token: string; onCreated: () => v
             onChange={(e) => setImageUrl(e.target.value)}
           />
           <p className="text-xs text-muted-foreground">
-            Google Drive / Dropbox share links are converted automatically — the file must be
+            Google Drive / Dropbox share links are converted automatically. The file must be
             shared as &ldquo;anyone with the link.&rdquo;
           </p>
           <PosterPreview url={imageUrl} />

@@ -152,7 +152,7 @@ export function IntakeClient({ initial }: { initial: ReleaseStateDTO }) {
         setWaitlistPos(pos);
         localStorage.setItem(waitlistKey(initial.releaseId), String(pos ?? 0));
         void poll();
-        toast("All slots are taken — you're on the waitlist.", {
+        toast("All slots are taken. You're on the waitlist.", {
           description: "We'll honor first-come order if a slot frees up.",
         });
         return;
@@ -247,7 +247,7 @@ export function IntakeClient({ initial }: { initial: ReleaseStateDTO }) {
           )}
           {phase === "retrying" && (
             <>
-              <Loader2 className="size-4 motion-safe:animate-spin" /> Busy — retrying fairly…
+              <Loader2 className="size-4 motion-safe:animate-spin" /> Busy, retrying fairly…
             </>
           )}
           {phase === "secured" && (
@@ -267,7 +267,7 @@ export function IntakeClient({ initial }: { initial: ReleaseStateDTO }) {
         {phase === "sold_out" && (
           <div className="rounded-xl border border-dashed bg-card p-4 text-center text-sm">
             <p className="font-medium">
-              You&apos;re on the waitlist{waitlistPos ? ` — position #${waitlistPos}` : ""}
+              You&apos;re on the waitlist{waitlistPos ? ` at position #${waitlistPos}` : ""}
             </p>
             <p className="mt-1 text-muted-foreground">
               First-come order is honored if a slot frees up. This stays here when you come back.

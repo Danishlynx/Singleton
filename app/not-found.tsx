@@ -13,7 +13,7 @@ export default function NotFound() {
         </span>
         <h1 className="text-2xl font-semibold tracking-tight">Nothing here</h1>
         <p className="text-sm text-muted-foreground">
-          This release, receipt, or page doesn&apos;t exist — it may have been mistyped or never
+          This release, receipt, or page doesn&apos;t exist. It may have been mistyped or never
           created. Everything real is on the ledger.
         </p>
         <Button asChild className="mt-2">

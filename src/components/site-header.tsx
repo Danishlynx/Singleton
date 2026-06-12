@@ -27,7 +27,7 @@ export function SiteFooter() {
   return (
     <footer className="mt-auto border-t border-dashed">
       <div className="mx-auto flex max-w-5xl flex-col gap-1 px-4 py-6 font-mono text-[11px] leading-relaxed text-muted-foreground">
-        <span>Singleton — provably-fair, no-oversell allocation on Amazon Aurora DSQL.</span>
+        <span>Singleton: provably-fair, no-oversell allocation on Amazon Aurora DSQL.</span>
         <span className="text-muted-foreground/70">
           Strongly consistent · serverless · multi-region. No blockchain.
         </span>

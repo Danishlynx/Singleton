@@ -31,7 +31,7 @@ export function Hero() {
 
       <p className="max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground md:text-lg">
         Singleton releases a fixed batch of slots to a crowd and guarantees every claim is
-        correct, first-come fair, and independently verifiable — one ordinary ACID transaction,
+        correct, first-come fair, and independently verifiable. One ordinary ACID transaction,
         no blockchain.
       </p>
 

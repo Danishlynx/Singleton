@@ -84,9 +84,9 @@ const principles: Principle[] = [
     icon: ListChecks,
     title: "Fair",
     description:
-      "First-come ordering, one slot per person, no line-jumping — enforced by the database, not by hope.",
+      "First-come ordering, one slot per person, no line-jumping, all enforced by the database rather than by hope.",
     evidence: <LedgerStrip />,
-    proof: "ranks derived from (claimed_at, id) — never stored, never gapped",
+    proof: "ranks derived from (claimed_at, id), never stored, never gapped",
   },
   {
     icon: ScrollText,
@@ -104,7 +104,7 @@ export function Principles() {
       <div className="mb-8 max-w-2xl space-y-2">
         <p className="micro-label text-accent-foreground">The guarantee</p>
         <h2 className="text-balance text-2xl font-semibold tracking-tight">
-          Not marketing claims — database constraints.
+          Not marketing claims. Database constraints.
         </h2>
         <p className="text-sm leading-relaxed text-muted-foreground">
           Each promise below is enforced by Amazon Aurora DSQL inside one ACID transaction, and

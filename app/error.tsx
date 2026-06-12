@@ -17,8 +17,8 @@ export default function Error({ reset }: { error: Error & { digest?: string }; r
         </span>
         <h1 className="text-2xl font-semibold tracking-tight">Something hiccuped</h1>
         <p className="text-sm text-muted-foreground">
-          Usually a momentary network blip between the app and the database. Nothing was lost —
-          every write here is idempotent, so retrying is always safe.
+          Usually a momentary network blip between the app and the database. Nothing was lost.
+          Every write here is idempotent, so retrying is always safe.
         </p>
         <div className="mt-2 flex gap-2">
           <Button onClick={reset}>

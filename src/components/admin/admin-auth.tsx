@@ -70,7 +70,7 @@ export function TokenGate({ children }: { children: (token: string) => ReactNode
           <CardTitle>Admin access</CardTitle>
           <CardDescription>
             This area is for release operators. Reviewing for the hackathon? Use the one-click
-            admin link in the submission&apos;s testing instructions — it signs you in here
+            admin link in the submission&apos;s testing instructions. It signs you in here
             automatically.
           </CardDescription>
         </CardHeader>

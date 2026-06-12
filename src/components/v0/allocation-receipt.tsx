@@ -112,7 +112,7 @@ export function AllocationReceipt({
             aria-hidden="true"
           />
           <span>
-            Your position is derived from an immutable public ledger — anyone can re-check it
+            Your position is derived from an immutable public ledger, so anyone can re-check it
             independently.
           </span>
         </p>

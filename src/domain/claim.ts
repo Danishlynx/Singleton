@@ -69,7 +69,7 @@ export async function claim(
   if ((await getMode(releaseId)) === "lottery") {
     throw new ClaimError(
       "lottery_mode",
-      "this release uses a windowed lottery — enter the draw instead of claiming",
+      "this release uses a windowed lottery; enter the draw instead of claiming",
     );
   }
 

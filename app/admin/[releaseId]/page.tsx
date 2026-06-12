@@ -155,7 +155,7 @@ function Monitor({ token, releaseId }: { token: string; releaseId: string }) {
         )}
         {isLottery && state.drawn && (
           <p className="text-sm text-muted-foreground">
-            Draw complete — winners are on the public ledger with the revealed seed.
+            Draw complete. Winners are on the public ledger with the revealed seed.
           </p>
         )}
         <div className="flex gap-4 text-xs">
@@ -203,7 +203,7 @@ function SimulatePanel({ token, releaseId }: { token: string; releaseId: string 
       if (data.invariantOk) {
         toast.success(`Guarantee held: 0 oversells across ${data.attempts} attempts.`);
       } else {
-        toast.error("Invariant violated — see metrics.");
+        toast.error("Invariant violated. See metrics.");
       }
     } finally {
       setBusy(false);
@@ -269,7 +269,7 @@ function SimulatePanel({ token, releaseId }: { token: string; releaseId: string 
               />
               <span className="text-sm font-medium">
                 {metrics.invariantOk
-                  ? "Guarantee held — no oversell, ranks contiguous, claimants distinct."
+                  ? "Guarantee held: no oversell, ranks contiguous, claimants distinct."
                   : "Invariant violated."}
               </span>
             </div>

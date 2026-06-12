@@ -14,7 +14,7 @@ const TIERS = [
     name: "Per release",
     price: "$49",
     cadence: "per release",
-    blurb: "For a single drop — a clinic block, one on-sale, one launch.",
+    blurb: "For a single drop: a clinic block, one on-sale, one launch.",
     features: ["Up to 1,000 slots", "FCFS or lottery mode", "Public verify ledger", "Burst-tested"],
   },
   {
@@ -50,8 +50,8 @@ export function Pricing() {
       <div className="space-y-1.5 border-t pt-6">
         <h2 className="text-lg font-semibold tracking-tight">Pricing for providers</h2>
         <p className="text-sm text-muted-foreground">
-          Claimants never pay Singleton. Providers pay for allocation they can defend in public —
-          &ldquo;verify it yourself&rdquo; is a better answer than &ldquo;trust us.&rdquo;
+          Claimants never pay Singleton. Providers pay for allocation they can defend in public,
+          because &ldquo;verify it yourself&rdquo; is a better answer than &ldquo;trust us.&rdquo;
         </p>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
@@ -91,8 +91,8 @@ export function Pricing() {
         ))}
       </div>
       <p className="text-xs text-muted-foreground">
-        Demo pricing — billing is intentionally not wired in this build; the judges&apos; testing
-        access stays free and unrestricted.
+        Demo pricing: billing is intentionally not wired in this build, and the judges&apos;
+        testing access stays free and unrestricted.
       </p>
     </section>
   );

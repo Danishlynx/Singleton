@@ -117,7 +117,7 @@ test.describe("lottery flow (real DSQL)", () => {
     void winnerEntry;
 
     await page.goto(`/receipt/${allocationId}`);
-    await expect(page.getByText(/you entered the window — selected/i)).toBeVisible();
+    await expect(page.getByText(/you entered the window and were selected/i)).toBeVisible();
     await expect(page.getByTestId("receipt-entry-id")).toBeVisible();
   });
 

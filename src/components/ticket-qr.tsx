@@ -30,7 +30,7 @@ export function TicketQr({ allocationId }: { allocationId: string }) {
         <p className="micro-label text-muted-foreground">Stub</p>
         <p className="mt-1.5 font-medium">Scan at the door</p>
         <p className="mt-1 text-muted-foreground">
-          Links straight to this receipt and its place on the public ledger — verifiable on any
+          Links straight to this receipt and its place on the public ledger. Verifiable on any
           phone, no app needed.
         </p>
       </div>

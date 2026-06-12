@@ -55,8 +55,8 @@ export default async function VerifyPage({ params }: { params: Promise<{ release
             </div>
             <div className="text-muted-foreground">
               {withinCapacity
-                ? "Within capacity — no oversell. Ranks are contiguous and first-come."
-                : "Capacity exceeded — this should never happen."}
+                ? "Within capacity, no oversell. Ranks are contiguous and first-come."
+                : "Capacity exceeded. This should never happen."}
             </div>
           </div>
           <Badge
@@ -101,9 +101,9 @@ export default async function VerifyPage({ params }: { params: Promise<{ release
         </div>
 
         <p className="text-xs text-muted-foreground">
-          The ledger is ordered by (claimed_at, id). Each rank is derived, not stored —{" "}
+          The ledger is ordered by (claimed_at, id). Each rank is derived, not stored.{" "}
           <Link className="underline underline-offset-4" href={`/releases/${releaseId}`}>
-            return to the release
+            Return to the release
           </Link>
           .
         </p>

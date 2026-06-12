@@ -93,7 +93,7 @@ export function LotteryProof({ releaseId }: { releaseId: string }) {
         <h2 className="text-lg font-semibold tracking-tight">Draw proof</h2>
         <p className="text-sm text-muted-foreground">
           {drawn
-            ? "The seed is revealed — re-run the entire draw in your own browser."
+            ? "The seed is revealed. Re-run the entire draw in your own browser."
             : "The draw hasn't run yet. The commitment below locks the seed in advance."}
         </p>
       </div>
@@ -103,7 +103,7 @@ export function LotteryProof({ releaseId }: { releaseId: string }) {
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-sm font-medium">
               <ShieldCheck className="size-4 text-accent-foreground" />
-              Fairness commitment — published before entries opened
+              Fairness commitment, published before entries opened
             </div>
             <span className="micro-label shrink-0 text-accent-foreground">Sealed</span>
           </div>
@@ -163,7 +163,7 @@ export function LotteryProof({ releaseId }: { releaseId: string }) {
                 <span className="stamp shrink-0 -rotate-2 text-accent-foreground">MATCH</span>
                 <div className="text-sm text-muted-foreground tabular-nums">
                   Your browser re-derived all {rerun.winners} winners from the seed and entry
-                  list in {rerun.ms} ms — identical to the published result.
+                  list in {rerun.ms} ms, identical to the published result.
                 </div>
               </div>
             )}
