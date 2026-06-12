@@ -22,7 +22,7 @@ export class ClaimError extends Error {
 
 export type ClaimResult =
   | { status: "allocated"; allocationId: string; alreadyHeld: boolean }
-  | { status: "sold_out"; waitlisted: boolean }
+  | { status: "sold_out"; waitlisted: boolean; position: number | null }
   | { status: "not_open"; opensAt: string };
 
 export interface ClaimOptions extends QueryOpts {
@@ -167,7 +167,10 @@ export async function claim(
     };
   }
 
-  // 2) Sold out => fair waitlist (idempotent).
+  // 2) Sold out => fair waitlist (idempotent), with a derived position the
+  // claimant can hold onto (same derive-not-store discipline as ranks).
   await addToWaitlist(releaseId, claimantId);
-  return { status: "sold_out", waitlisted: true };
+  const { getWaitlistPosition } = await import("@/db/allocations");
+  const position = (await getWaitlistPosition(releaseId, claimantId)) ?? null;
+  return { status: "sold_out", waitlisted: true, position };
 }

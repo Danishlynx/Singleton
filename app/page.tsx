@@ -31,7 +31,7 @@ export default async function Home() {
         <Hero />
         <Principles />
 
-        <section className="mx-auto max-w-5xl space-y-4 px-6 pb-24">
+        <section id="releases" className="mx-auto max-w-5xl scroll-mt-20 space-y-4 px-6 pb-24">
           <h2 className="text-lg font-medium tracking-tight">Live releases</h2>
           {releases === null ? (
             <p className="text-sm text-muted-foreground">
@@ -74,20 +74,41 @@ export default async function Home() {
                         <div className="flex shrink-0 gap-1.5">
                           {s.mode === "lottery" && (
                             <Badge variant="secondary" className="rounded-full">
-                              lottery
+                              Lottery
                             </Badge>
                           )}
-                          <Badge
-                            variant={s.remaining > 0 ? "default" : "secondary"}
-                            className="rounded-full"
-                          >
-                            {s.remaining > 0 ? "Open" : "Sold out"}
-                          </Badge>
+                          {/* Lottery lifecycle is window-based, not stock-based —
+                              "Sold out"/"Open" would lie once the window closes. */}
+                          {s.mode === "lottery" ? (
+                            <Badge
+                              variant={
+                                s.drawn
+                                  ? "secondary"
+                                  : Date.parse(s.entryClosesAt ?? "") > Date.now()
+                                    ? "default"
+                                    : "secondary"
+                              }
+                              className="rounded-full"
+                            >
+                              {s.drawn
+                                ? "Drawn"
+                                : Date.parse(s.entryClosesAt ?? "") > Date.now()
+                                  ? "Window open"
+                                  : "Awaiting draw"}
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant={s.remaining > 0 ? "default" : "secondary"}
+                              className="rounded-full"
+                            >
+                              {s.remaining > 0 ? "Open" : "Sold out"}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                       <CardDescription className="tabular-nums">
                         {s.mode === "lottery"
-                          ? `${s.entrantCount ?? 0} entries · ${s.capacity} slots`
+                          ? `${s.entrantCount ?? 0} ${(s.entrantCount ?? 0) === 1 ? "entry" : "entries"} · ${s.capacity} ${s.capacity === 1 ? "slot" : "slots"}`
                           : `${s.remaining} of ${s.capacity} remaining`}
                         {s.meta?.venue ? ` · ${s.meta.venue}` : ""}
                       </CardDescription>

@@ -1,8 +1,9 @@
 // Scaffolded with v0 (v0 Max): https://v0.app/chat/singleton-landing-page-pqMkmiIqurO
 // Imported from the v0 export (components/hero.tsx).
 // Adaptations from the original: v0's `brand` color token mapped to our `primary`
-// (the theme's single indigo accent), and the Base-UI-style `render` prop converted
-// to our Radix button's `asChild` API.
+// (the theme's single indigo accent), the Base-UI-style `render` prop converted
+// to our Radix button's `asChild` API, and the CTA pair re-pointed after a UX
+// audit (public visitors browse releases; admin creation is the secondary path).
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -29,12 +30,17 @@ export function Hero() {
         no blockchain.
       </p>
 
-      <Button size="lg" className="mt-2 gap-2" asChild>
-        <Link href="/admin">
-          Create a release
-          <ArrowRight className="size-4" />
-        </Link>
-      </Button>
+      <div className="mt-2 flex flex-wrap gap-3">
+        <Button size="lg" className="gap-2" asChild>
+          <Link href="/#releases">
+            Browse live releases
+            <ArrowRight className="size-4" />
+          </Link>
+        </Button>
+        <Button size="lg" variant="outline" asChild>
+          <Link href="/admin">Create a release</Link>
+        </Button>
+      </div>
     </section>
   );
 }

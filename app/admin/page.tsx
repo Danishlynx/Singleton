@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ArrowRight, Loader2, Plus } from "lucide-react";
 
@@ -109,7 +110,7 @@ function CreateRelease({ token, onCreated }: { token: string; onCreated: () => v
           />
         </div>
         <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="opensAt">Opens at (optional)</Label>
+          <Label htmlFor="opensAt">Opens at (optional, your local time — shown publicly in UTC)</Label>
           <Input
             id="opensAt"
             type="datetime-local"
@@ -119,13 +120,14 @@ function CreateRelease({ token, onCreated }: { token: string; onCreated: () => v
         </div>
         <div className="space-y-2 sm:col-span-2">
           <Label>Allocation mode</Label>
-          <div className="flex gap-2" role="radiogroup" aria-label="Allocation mode">
+          {/* aria-pressed toggle buttons: honest semantics without needing the
+              roving-tabindex/arrow-key contract a radiogroup implies. */}
+          <div className="flex gap-2" aria-label="Allocation mode">
             <Button
               type="button"
               variant={mode === "fcfs" ? "default" : "outline"}
               size="sm"
-              role="radio"
-              aria-checked={mode === "fcfs"}
+              aria-pressed={mode === "fcfs"}
               onClick={() => setMode("fcfs")}
             >
               First come, first served
@@ -134,8 +136,7 @@ function CreateRelease({ token, onCreated }: { token: string; onCreated: () => v
               type="button"
               variant={mode === "lottery" ? "default" : "outline"}
               size="sm"
-              role="radio"
-              aria-checked={mode === "lottery"}
+              aria-pressed={mode === "lottery"}
               onClick={() => setMode("lottery")}
               data-testid="mode-lottery"
             >
@@ -150,7 +151,9 @@ function CreateRelease({ token, onCreated }: { token: string; onCreated: () => v
         </div>
         {mode === "lottery" && (
           <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="entryClosesAt">Entry window closes at (draw time)</Label>
+            <Label htmlFor="entryClosesAt">
+              Entry window closes at (draw time, your local time)
+            </Label>
             <Input
               id="entryClosesAt"
               type="datetime-local"
@@ -240,7 +243,15 @@ function ReleaseList({ refreshKey }: { refreshKey: number }) {
     void load();
   }, [load, refreshKey]);
 
-  if (loaded && releases.length === 0) {
+  if (!loaded) {
+    return (
+      <div className="grid gap-3">
+        <Skeleton className="h-20 w-full rounded-xl" />
+        <Skeleton className="h-20 w-full rounded-xl" />
+      </div>
+    );
+  }
+  if (releases.length === 0) {
     return <p className="text-sm text-muted-foreground">No releases yet.</p>;
   }
 
@@ -252,12 +263,20 @@ function ReleaseList({ refreshKey }: { refreshKey: number }) {
             <div>
               <CardTitle className="text-base">{r.title}</CardTitle>
               <CardDescription className="tabular-nums">
-                {r.remaining} of {r.capacity} remaining · {r.allocated} claimed
+                {r.mode === "lottery"
+                  ? `${r.entrantCount ?? 0} ${(r.entrantCount ?? 0) === 1 ? "entry" : "entries"} · ${r.capacity} slots`
+                  : `${r.remaining} of ${r.capacity} remaining · ${r.allocated} claimed`}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <Badge variant={r.remaining > 0 ? "default" : "secondary"} className="rounded-full">
-                {r.status}
+                {r.mode === "lottery"
+                  ? r.drawn
+                    ? "Drawn"
+                    : Date.parse(r.entryClosesAt ?? "") > Date.now()
+                      ? "Window open"
+                      : "Awaiting draw"
+                  : r.status.charAt(0).toUpperCase() + r.status.slice(1)}
               </Badge>
               <Button asChild size="sm" variant="secondary">
                 <Link href={`/admin/${r.releaseId}`}>
