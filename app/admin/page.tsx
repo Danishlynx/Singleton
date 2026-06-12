@@ -20,6 +20,10 @@ function CreateRelease({ token, onCreated }: { token: string; onCreated: () => v
   const [opensAt, setOpensAt] = useState("");
   const [mode, setMode] = useState<"fcfs" | "lottery">("fcfs");
   const [entryClosesAt, setEntryClosesAt] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [description, setDescription] = useState("");
+  const [venue, setVenue] = useState("");
+  const [eventAt, setEventAt] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function submit() {
@@ -27,8 +31,19 @@ function CreateRelease({ token, onCreated }: { token: string; onCreated: () => v
       toast.error("A lottery release needs an entry-close time.");
       return;
     }
+    if (imageUrl && !imageUrl.startsWith("https://")) {
+      toast.error("Image URL must be https://");
+      return;
+    }
     setBusy(true);
     try {
+      const meta = {
+        imageUrl: imageUrl.trim() || undefined,
+        description: description.trim() || undefined,
+        venue: venue.trim() || undefined,
+        eventAt: eventAt ? new Date(eventAt).toISOString() : undefined,
+      };
+      const hasMeta = Object.values(meta).some(Boolean);
       const res = await adminFetch(token, "/api/releases", {
         method: "POST",
         body: JSON.stringify({
@@ -40,6 +55,7 @@ function CreateRelease({ token, onCreated }: { token: string; onCreated: () => v
             mode === "lottery"
               ? { entryClosesAt: new Date(entryClosesAt).toISOString() }
               : undefined,
+          meta: hasMeta ? meta : undefined,
         }),
       });
       const data = (await res.json().catch(() => ({}))) as {
@@ -144,6 +160,51 @@ function CreateRelease({ token, onCreated }: { token: string; onCreated: () => v
             />
           </div>
         )}
+        <div className="space-y-2 sm:col-span-2">
+          <Label htmlFor="imageUrl">
+            Poster image URL <span className="text-muted-foreground">(optional, https)</span>
+          </Label>
+          <Input
+            id="imageUrl"
+            inputMode="url"
+            placeholder="https://images.example.com/poster.jpg"
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2 sm:col-span-2">
+          <Label htmlFor="description">
+            Description <span className="text-muted-foreground">(optional)</span>
+          </Label>
+          <Input
+            id="description"
+            placeholder="One calm sentence about the event or batch."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="venue">
+            Venue <span className="text-muted-foreground">(optional)</span>
+          </Label>
+          <Input
+            id="venue"
+            placeholder="City Concert Hall"
+            value={venue}
+            onChange={(e) => setVenue(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="eventAt">
+            Event date <span className="text-muted-foreground">(optional)</span>
+          </Label>
+          <Input
+            id="eventAt"
+            type="datetime-local"
+            value={eventAt}
+            onChange={(e) => setEventAt(e.target.value)}
+          />
+        </div>
         <div className="sm:col-span-2">
           <Button onClick={submit} disabled={busy}>
             {busy ? (

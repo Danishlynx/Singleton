@@ -1,30 +1,76 @@
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getReleaseState } from "@/db/releases";
+import { getReleaseMeta } from "@/db/release-meta";
 import { IntakeClient } from "@/components/intake-client";
 import { LotteryIntakeClient } from "@/components/lottery-intake-client";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CalendarDays, MapPin } from "lucide-react";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+function formatEventDate(iso: string): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "full",
+    timeStyle: "short",
+    timeZone: "UTC",
+  }).format(new Date(iso));
+}
 
 export default async function ReleasePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const state = await getReleaseState(id);
   if (!state) notFound();
+  const meta = await getReleaseMeta(id);
   const isLottery = state.mode === "lottery";
 
   return (
     <>
       <SiteHeader />
       <main className="mx-auto w-full max-w-lg flex-1 px-4 py-12">
-        <Card>
+        <Card className="overflow-hidden pt-0">
+          {/* Vendor branding: poster if provided, calm gradient fallback otherwise */}
+          {meta?.imageUrl ? (
+            <div className="relative h-52 w-full">
+              <Image
+                src={meta.imageUrl}
+                alt={`${state.title} poster`}
+                fill
+                priority
+                sizes="(max-width: 512px) 100vw, 512px"
+                className="object-cover"
+              />
+            </div>
+          ) : (
+            <div
+              className="h-24 w-full bg-gradient-to-r from-primary/15 via-accent to-primary/5"
+              aria-hidden="true"
+            />
+          )}
+
           <CardHeader>
             <CardTitle className="text-xl">{state.title}</CardTitle>
+            {(meta?.venue || meta?.eventAt) && (
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                {meta.venue && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <MapPin className="size-3.5" /> {meta.venue}
+                  </span>
+                )}
+                {meta.eventAt && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <CalendarDays className="size-3.5" /> {formatEventDate(meta.eventAt)} UTC
+                  </span>
+                )}
+              </div>
+            )}
             <CardDescription>
-              {isLottery
-                ? `A fixed batch of ${state.capacity} slots, drawn fairly from everyone who enters the window.`
-                : `A fixed batch of ${state.capacity} slots, allocated fairly and verifiably.`}
+              {meta?.description ??
+                (isLottery
+                  ? `A fixed batch of ${state.capacity} slots, drawn fairly from everyone who enters the window.`
+                  : `A fixed batch of ${state.capacity} slots, allocated fairly and verifiably.`)}
             </CardDescription>
           </CardHeader>
           <CardContent>
