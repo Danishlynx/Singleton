@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getReleaseState } from "@/db/releases";
 import { getReleaseMeta } from "@/db/release-meta";
@@ -6,7 +7,7 @@ import { LotteryIntakeClient } from "@/components/lottery-intake-client";
 import { PosterImage } from "@/components/poster-image";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays, MapPin } from "lucide-react";
+import { ArrowLeft, CalendarDays, MapPin } from "lucide-react";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,6 +31,12 @@ export default async function ReleasePage({ params }: { params: Promise<{ id: st
     <>
       <SiteHeader />
       <main className="mx-auto w-full max-w-lg flex-1 px-4 py-12">
+        <Link
+          href="/#releases"
+          className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="size-3.5" aria-hidden="true" /> All releases
+        </Link>
         <Card className="overflow-hidden pt-0">
           {/* Vendor branding: poster if provided, calm gradient fallback otherwise */}
           {meta?.imageUrl ? (
