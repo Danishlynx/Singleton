@@ -4,6 +4,7 @@ import { Hero } from "@/components/v0/hero";
 import { Principles } from "@/components/v0/principles";
 import { Pricing } from "@/components/pricing";
 import { PosterImage } from "@/components/poster-image";
+import { RefreshWhenStale } from "@/components/refresh-when-stale";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { listReleaseStates, type ReleaseListing } from "@/db/releases";
@@ -25,6 +26,7 @@ export default async function Home() {
 
   return (
     <>
+      <RefreshWhenStale renderedAt={Date.now()} />
       <SiteHeader />
       <main className="flex-1">
         {/* Hero + principles scaffolded with v0 — see src/components/v0/ */}
