@@ -77,9 +77,18 @@ export function TokenGate({ children }: { children: (token: string) => ReactNode
 }
 
 export function SignOutButton() {
-  const { setToken } = useAdminToken();
+  // Each useAdminToken() call owns independent state, so mutating it here would
+  // never reach TokenGate's copy. Clear the stored token and reload — the gate
+  // re-reads localStorage on mount and shows the sign-in card.
   return (
-    <Button variant="ghost" size="sm" onClick={() => setToken(null)}>
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={() => {
+        localStorage.removeItem(STORAGE_KEY);
+        window.location.reload();
+      }}
+    >
       Sign out
     </Button>
   );
