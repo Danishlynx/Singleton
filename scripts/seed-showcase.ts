@@ -1,4 +1,4 @@
-import "./load-env";
+﻿import "./load-env";
 import { randomUUID } from "node:crypto";
 
 /**
@@ -6,7 +6,7 @@ import { randomUUID } from "node:crypto";
  * lifecycle states, with ORGANIC ACTIVITY (real claims/entries through the domain
  * layer) so the landing reads as a living marketplace, not a fresh install.
  *
- * Every poster URL is verified to serve image/* before anything is written —
+ * Every poster URL is verified to serve image/* before anything is written â€”
  * a showcase with broken images is worse than none.
  *
  *   npx tsx scripts/seed-showcase.ts
@@ -34,25 +34,25 @@ interface ShowcaseSpec {
 const SHOWCASE: ShowcaseSpec[] = [
   {
     provider: "Aurora Live Events",
-    title: "Midnight Frequencies — World Tour",
+    title: "Midnight Frequencies â€” World Tour",
     capacity: 500,
     shardCount: 32,
     mode: "fcfs",
     image:
-      "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=1200&q=80&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=2000&q=85&auto=format&fit=crop",
     description:
-      "500 floor tickets released at once. First come, first served — and provably never more than 500.",
+      "500 floor tickets released at once. First come, first served â€” and provably never more than 500.",
     venue: "City Arena, Mumbai",
     eventInDays: 30,
     claims: 42,
   },
   {
     provider: "GameDev Germany e.V.",
-    title: "GameDev Germany — Founders' Night",
+    title: "GameDev Germany â€” Founders' Night",
     capacity: 200,
     shardCount: 32,
     mode: "fcfs",
-    image: "https://drive.google.com/thumbnail?id=1YFVkgr6VSMFQDKH33Msriexso9ZNUKKf&sz=w1600",
+    image: "https://drive.google.com/thumbnail?id=1YFVkgr6VSMFQDKH33Msriexso9ZNUKKf&sz=w2000",
     description:
       "A night for the people who ship worlds. 200 seats, allocated in arrival order on a public ledger.",
     venue: "Rosalind Avenue, Berlin",
@@ -61,57 +61,57 @@ const SHOWCASE: ShowcaseSpec[] = [
   },
   {
     provider: "Sunrise Community Clinic",
-    title: "Free flu vaccination — Saturday block",
+    title: "Free flu vaccination â€” Saturday block",
     capacity: 120,
     shardCount: 16,
     mode: "lottery",
     windowDays: 3,
     image:
-      "https://images.unsplash.com/photo-1584515933487-779824d29309?w=1200&q=80&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=2000&q=85&auto=format&fit=crop",
     description:
-      "Enter any time before Saturday's draw — a bot entering in second one has exactly the same odds as you.",
+      "Enter any time before Saturday's draw â€” a bot entering in second one has exactly the same odds as you.",
     venue: "Sunrise Clinic, Hall B",
     eventInDays: 4,
     entries: 28,
   },
   {
     provider: "Form & Field",
-    title: "FF-01 'Indigo' — limited drop",
+    title: "FF-01 'Indigo' â€” limited drop",
     capacity: 24,
     shardCount: 8,
     mode: "lottery",
     windowDays: 1,
     image:
-      "https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=1200&q=80&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=2000&q=85&auto=format&fit=crop",
     description:
-      "24 pairs, already oversubscribed. The draw seed is committed below — re-run the draw yourself after it reveals.",
-    venue: "Online — ships worldwide",
+      "24 pairs, already oversubscribed. The draw seed is committed below â€” re-run the draw yourself after it reveals.",
+    venue: "Online â€” ships worldwide",
     entries: 61,
   },
   {
-    provider: "Åsen Supper Club",
-    title: "Chef's table — one night only",
+    provider: "Ã…sen Supper Club",
+    title: "Chef's table â€” one night only",
     capacity: 12,
     shardCount: 4,
     mode: "fcfs",
     image:
-      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=80&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=2000&q=85&auto=format&fit=crop",
     description: "Twelve seats at the pass. When they're gone, the ledger proves it.",
-    venue: "Åsen Supper Club, Oslo",
+    venue: "Ã…sen Supper Club, Oslo",
     eventInDays: 9,
     claims: 7,
   },
   {
     provider: "City Marathon Foundation",
-    title: "City Marathon 2027 — guaranteed entries",
+    title: "City Marathon 2027 â€” guaranteed entries",
     capacity: 1000,
     shardCount: 32,
     mode: "lottery",
     windowDays: 6,
     image:
-      "https://images.unsplash.com/photo-1486218119243-13883505764c?w=1200&q=80&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?w=2000&q=85&auto=format&fit=crop",
     description:
-      "1,000 guaranteed race entries by fair draw. No refresh-mashing at 6am — the window is open for a week.",
+      "1,000 guaranteed race entries by fair draw. No refresh-mashing at 6am â€” the window is open for a week.",
     venue: "Start line: Harbour Bridge",
     eventInDays: 200,
     entries: 134,
@@ -146,7 +146,9 @@ async function main(): Promise<void> {
   await verifyImages();
   const now = Date.now();
 
-  for (const s of SHOWCASE) {
+  // The landing lists newest-first, so seed in REVERSE of the desired display
+  // order: the first entry in SHOWCASE ends up at the top of the page.
+  for (const s of [...SHOWCASE].reverse()) {
     const providerId = await createProvider(s.provider);
     const release = await createRelease({
       providerId,
@@ -183,8 +185,8 @@ async function main(): Promise<void> {
     }
 
     console.log(
-      `  ${s.mode === "lottery" ? "lottery" : "fcfs   "} · ${s.title}` +
-        `  → /releases/${release.id}` +
+      `  ${s.mode === "lottery" ? "lottery" : "fcfs   "} Â· ${s.title}` +
+        `  â†’ /releases/${release.id}` +
         (s.claims ? `  (${s.claims} claimed)` : "") +
         (s.entries ? `  (${s.entries} entries)` : ""),
     );
