@@ -15,6 +15,7 @@ import { closePools } from "@/db/pool";
  */
 
 const TEST_TITLE_PATTERNS = [
+  // Test tooling
   "Stress release",
   "Lottery stress release",
   "E2E %",
@@ -22,6 +23,14 @@ const TEST_TITLE_PATTERNS = [
   "Lottery integration release",
   "MR release",
   "control",
+  // Demo/seed data (so this doubles as a full demo reset before re-seeding)
+  "Spring vaccination slots",
+  "Midnight Frequencies%",
+  "GameDev%",
+  "Free flu vaccination%",
+  "FF-01%",
+  "Chef's table%",
+  "City Marathon%",
 ];
 
 const BATCH = 2000; // safely under the 3,000-row per-transaction cap

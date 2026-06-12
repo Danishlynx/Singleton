@@ -1,95 +1,207 @@
 import "./load-env";
-import { createProvider, createRelease } from "@/db/releases";
-import { upsertReleaseMeta } from "@/db/release-meta";
-import { insertLotteryConfig } from "@/db/lottery";
-import { generateSeed } from "@/domain/lottery";
-import { closePools } from "@/db/pool";
+import { randomUUID } from "node:crypto";
 
 /**
- * Showcase seed: a handful of branded demo releases so the landing page reads as
- * a living marketplace (concert FCFS drop, clinic lottery, sneaker drop). Poster
- * images are Unsplash hotlinks (stable CDN URLs, free to use). Safe to run
- * repeatedly — every run creates fresh releases.
+ * Curated showcase seed (v2): six branded releases across both modes and several
+ * lifecycle states, with ORGANIC ACTIVITY (real claims/entries through the domain
+ * layer) so the landing reads as a living marketplace, not a fresh install.
+ *
+ * Every poster URL is verified to serve image/* before anything is written —
+ * a showcase with broken images is worse than none.
  *
  *   npx tsx scripts/seed-showcase.ts
+ *
+ * Pair with scripts/cleanup-test-data.ts to reset to a clean slate first.
  */
 
 const DAY = 86_400_000;
 
-async function main(): Promise<void> {
-  const now = Date.now();
+interface ShowcaseSpec {
+  provider: string;
+  title: string;
+  capacity: number;
+  shardCount: number;
+  mode: "fcfs" | "lottery";
+  windowDays?: number; // lottery only
+  image: string;
+  description: string;
+  venue?: string;
+  eventInDays?: number;
+  claims?: number; // fcfs activity
+  entries?: number; // lottery activity
+}
 
-  // --- 1. Concert on-sale: FCFS, the classic ticket drop ---
-  const venueCo = await createProvider("Aurora Live Events");
-  const concert = await createRelease({
-    providerId: venueCo,
+const SHOWCASE: ShowcaseSpec[] = [
+  {
+    provider: "Aurora Live Events",
     title: "Midnight Frequencies — World Tour",
     capacity: 500,
     shardCount: 32,
-    opensAt: new Date(now - 60_000),
-    status: "open",
-  });
-  await upsertReleaseMeta(concert.id, {
-    imageUrl:
+    mode: "fcfs",
+    image:
       "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=1200&q=80&auto=format&fit=crop",
     description:
-      "500 floor tickets released at once. First come, first served — and provably nothing more than 500.",
+      "500 floor tickets released at once. First come, first served — and provably never more than 500.",
     venue: "City Arena, Mumbai",
-    eventAt: new Date(now + 30 * DAY),
-  });
-
-  // --- 2. Clinic vaccination block: lottery (the fairness flagship) ---
-  const clinic = await createProvider("Sunrise Community Clinic");
-  const vaccines = await createRelease({
-    providerId: clinic,
+    eventInDays: 30,
+    claims: 42,
+  },
+  {
+    provider: "GameDev Germany e.V.",
+    title: "GameDev Germany — Founders' Night",
+    capacity: 200,
+    shardCount: 32,
+    mode: "fcfs",
+    image: "https://drive.google.com/thumbnail?id=1YFVkgr6VSMFQDKH33Msriexso9ZNUKKf&sz=w1600",
+    description:
+      "A night for the people who ship worlds. 200 seats, allocated in arrival order on a public ledger.",
+    venue: "Rosalind Avenue, Berlin",
+    eventInDays: 33,
+    claims: 17,
+  },
+  {
+    provider: "Sunrise Community Clinic",
     title: "Free flu vaccination — Saturday block",
     capacity: 120,
     shardCount: 16,
-    opensAt: new Date(now - 60_000),
-    status: "open",
-  });
-  const seed1 = generateSeed();
-  await insertLotteryConfig(vaccines.id, new Date(now + 1 * DAY), seed1.seed, seed1.seedHash);
-  await upsertReleaseMeta(vaccines.id, {
-    imageUrl:
-      "https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?w=1200&q=80&auto=format&fit=crop",
+    mode: "lottery",
+    windowDays: 3,
+    image:
+      "https://images.unsplash.com/photo-1584515933487-779824d29309?w=1200&q=80&auto=format&fit=crop",
     description:
-      "Enter any time before the draw — a bot entering in second one has exactly the same odds as you.",
+      "Enter any time before Saturday's draw — a bot entering in second one has exactly the same odds as you.",
     venue: "Sunrise Clinic, Hall B",
-    eventAt: new Date(now + 3 * DAY),
-  });
-
-  // --- 3. Sneaker drop: small-capacity lottery (bot-resistance story) ---
-  const brand = await createProvider("Form & Field");
-  const sneakers = await createRelease({
-    providerId: brand,
+    eventInDays: 4,
+    entries: 28,
+  },
+  {
+    provider: "Form & Field",
     title: "FF-01 'Indigo' — limited drop",
     capacity: 24,
     shardCount: 8,
-    opensAt: new Date(now - 60_000),
-    status: "open",
-  });
-  const seed2 = generateSeed();
-  await insertLotteryConfig(sneakers.id, new Date(now + 2 * DAY), seed2.seed, seed2.seedHash);
-  await upsertReleaseMeta(sneakers.id, {
-    imageUrl:
-      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=1200&q=80&auto=format&fit=crop",
+    mode: "lottery",
+    windowDays: 1,
+    image:
+      "https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=1200&q=80&auto=format&fit=crop",
     description:
-      "24 pairs. The draw seed is already committed below — when it reveals, re-run the draw yourself.",
+      "24 pairs, already oversubscribed. The draw seed is committed below — re-run the draw yourself after it reveals.",
     venue: "Online — ships worldwide",
-  });
+    entries: 61,
+  },
+  {
+    provider: "Åsen Supper Club",
+    title: "Chef's table — one night only",
+    capacity: 12,
+    shardCount: 4,
+    mode: "fcfs",
+    image:
+      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=80&auto=format&fit=crop",
+    description: "Twelve seats at the pass. When they're gone, the ledger proves it.",
+    venue: "Åsen Supper Club, Oslo",
+    eventInDays: 9,
+    claims: 7,
+  },
+  {
+    provider: "City Marathon Foundation",
+    title: "City Marathon 2027 — guaranteed entries",
+    capacity: 1000,
+    shardCount: 32,
+    mode: "lottery",
+    windowDays: 6,
+    image:
+      "https://images.unsplash.com/photo-1486218119243-13883505764c?w=1200&q=80&auto=format&fit=crop",
+    description:
+      "1,000 guaranteed race entries by fair draw. No refresh-mashing at 6am — the window is open for a week.",
+    venue: "Start line: Harbour Bridge",
+    eventInDays: 200,
+    entries: 134,
+  },
+];
 
-  console.log("Showcase seeded:");
-  console.log(`  concert  (FCFS 500)    : /releases/${concert.id}`);
-  console.log(`  vaccines (lottery 120) : /releases/${vaccines.id}  (draws in 1 day)`);
-  console.log(`  sneakers (lottery 24)  : /releases/${sneakers.id}  (draws in 2 days)`);
+async function verifyImages(): Promise<void> {
+  for (const s of SHOWCASE) {
+    const res = await fetch(s.image, { method: "HEAD" });
+    const type = res.headers.get("content-type") ?? "";
+    if (!res.ok || !type.startsWith("image/")) {
+      throw new Error(`Poster not serving an image (${res.status} ${type}): ${s.title}`);
+    }
+  }
+  console.log(`All ${SHOWCASE.length} posters verified (HTTP image/*).`);
+}
+
+async function runBatches<T>(items: T[], batch: number, fn: (item: T) => Promise<unknown>) {
+  for (let i = 0; i < items.length; i += batch) {
+    await Promise.all(items.slice(i, i + batch).map(fn));
+  }
+}
+
+async function main(): Promise<void> {
+  process.env.DB_POOL_MAX = process.env.DB_POOL_MAX ?? "16";
+  const { createProvider, createRelease } = await import("@/db/releases");
+  const { upsertReleaseMeta } = await import("@/db/release-meta");
+  const { insertLotteryConfig, insertEntry } = await import("@/db/lottery");
+  const { generateSeed } = await import("@/domain/lottery");
+  const { claim } = await import("@/domain/claim");
+
+  await verifyImages();
+  const now = Date.now();
+
+  for (const s of SHOWCASE) {
+    const providerId = await createProvider(s.provider);
+    const release = await createRelease({
+      providerId,
+      title: s.title,
+      capacity: s.capacity,
+      shardCount: s.shardCount,
+      opensAt: new Date(now - 60_000),
+      status: "open",
+    });
+    if (s.mode === "lottery") {
+      const { seed, seedHash } = generateSeed();
+      await insertLotteryConfig(
+        release.id,
+        new Date(now + (s.windowDays ?? 1) * DAY),
+        seed,
+        seedHash,
+      );
+    }
+    await upsertReleaseMeta(release.id, {
+      imageUrl: s.image,
+      description: s.description,
+      venue: s.venue,
+      eventAt: s.eventInDays ? new Date(now + s.eventInDays * DAY) : undefined,
+    });
+
+    // Organic activity through the real domain paths.
+    if (s.claims) {
+      const claimants = Array.from({ length: s.claims }, (_, i) => `demo-${i}-${randomUUID()}`);
+      await runBatches(claimants, 10, (c) => claim(release.id, c, randomUUID()));
+    }
+    if (s.entries) {
+      const entrants = Array.from({ length: s.entries }, (_, i) => `demo-${i}-${randomUUID()}`);
+      await runBatches(entrants, 16, (e) => insertEntry(release.id, e));
+    }
+
+    console.log(
+      `  ${s.mode === "lottery" ? "lottery" : "fcfs   "} · ${s.title}` +
+        `  → /releases/${release.id}` +
+        (s.claims ? `  (${s.claims} claimed)` : "") +
+        (s.entries ? `  (${s.entries} entries)` : ""),
+    );
+  }
+
+  console.log("Showcase v2 seeded.");
 }
 
 main()
-  .then(() => closePools())
-  .then(() => process.exit(0))
+  .then(async () => {
+    const { closePools } = await import("@/db/pool");
+    await closePools();
+    process.exit(0);
+  })
   .catch(async (err) => {
     console.error("Showcase seed failed:", err);
+    const { closePools } = await import("@/db/pool");
     await closePools();
     process.exit(1);
   });
