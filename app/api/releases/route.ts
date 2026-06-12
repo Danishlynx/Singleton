@@ -75,7 +75,13 @@ export async function POST(req: NextRequest) {
 
   if (meta && (meta.imageUrl || meta.description || meta.venue || meta.eventAt)) {
     const { upsertReleaseMeta } = await import("@/db/release-meta");
-    await upsertReleaseMeta(release.id, meta);
+    const { normalizeImageUrl } = await import("@/lib/image-url");
+    await upsertReleaseMeta(release.id, {
+      ...meta,
+      // Share links (Drive/Dropbox) are rewritten to direct-image URLs so the
+      // stored value is always renderable.
+      imageUrl: meta.imageUrl ? normalizeImageUrl(meta.imageUrl) : undefined,
+    });
   }
 
   // Mode B: commit the seed at creation. Only the HASH is ever serialized here;

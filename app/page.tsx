@@ -1,9 +1,9 @@
-import Image from "next/image";
 import Link from "next/link";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { Hero } from "@/components/v0/hero";
 import { Principles } from "@/components/v0/principles";
 import { Pricing } from "@/components/pricing";
+import { PosterImage } from "@/components/poster-image";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { listReleaseStates, type ReleaseListing } from "@/db/releases";
@@ -54,12 +54,10 @@ export default async function Home() {
                   <Card className="overflow-hidden pt-0 transition-colors group-hover:border-primary/50">
                     {s.meta?.imageUrl ? (
                       <div className="relative h-28 w-full">
-                        <Image
+                        <PosterImage
                           src={s.meta.imageUrl}
                           alt=""
-                          fill
                           sizes="(max-width: 640px) 100vw, 480px"
-                          className="object-cover"
                         />
                       </div>
                     ) : (

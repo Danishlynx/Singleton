@@ -1,9 +1,9 @@
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getReleaseState } from "@/db/releases";
 import { getReleaseMeta } from "@/db/release-meta";
 import { IntakeClient } from "@/components/intake-client";
 import { LotteryIntakeClient } from "@/components/lottery-intake-client";
+import { PosterImage } from "@/components/poster-image";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarDays, MapPin } from "lucide-react";
@@ -34,13 +34,11 @@ export default async function ReleasePage({ params }: { params: Promise<{ id: st
           {/* Vendor branding: poster if provided, calm gradient fallback otherwise */}
           {meta?.imageUrl ? (
             <div className="relative h-52 w-full">
-              <Image
+              <PosterImage
                 src={meta.imageUrl}
                 alt={`${state.title} poster`}
-                fill
                 priority
                 sizes="(max-width: 512px) 100vw, 512px"
-                className="object-cover"
               />
             </div>
           ) : (
