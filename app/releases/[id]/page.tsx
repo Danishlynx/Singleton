@@ -28,45 +28,17 @@ export default async function ReleasePage({ params }: { params: Promise<{ id: st
   if (!state) notFound();
   const isLottery = state.mode === "lottery";
 
-  const hasPoster = Boolean(meta?.imageUrl);
-
   return (
     <>
       <SiteHeader />
-      <main className="relative flex-1 overflow-hidden">
-        {/* Immersive ambience: the poster, blurred and scaled, becomes the page
-            backdrop with a paper scrim. The card below floats on top as frosted
-            glass, so the page feels like THIS event while card text stays dark
-            on a light surface (fully legible). Decorative only. */}
-        {hasPoster && (
-          <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={meta!.imageUrl!}
-              alt=""
-              className="h-full w-full scale-110 object-cover blur-2xl"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/40 to-background/75" />
-          </div>
-        )}
-        <div className="relative z-10 mx-auto w-full max-w-lg px-4 py-12">
+      <main className="mx-auto w-full max-w-lg flex-1 px-4 py-12">
         <Link
           href="/#releases"
           className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="size-3.5" aria-hidden="true" /> All releases
         </Link>
-        <Card
-          className={
-            hasPoster
-              ? // Liquid glass: ~30% opaque so the event shows through, kept legible
-                // by a strong backdrop blur + saturation (Apple's trick). The
-                // supports- fallback gives a more opaque card where backdrop-filter
-                // is unavailable, so text never drops onto a near-transparent panel.
-                "overflow-hidden border border-white/40 bg-card/70 pt-0 shadow-2xl shadow-black/20 ring-1 ring-white/15 backdrop-blur-2xl backdrop-saturate-150 supports-[backdrop-filter]:bg-card/30"
-              : "overflow-hidden pt-0"
-          }
-        >
+        <Card className="overflow-hidden pt-0">
           {/* Vendor branding: poster if provided, calm gradient fallback otherwise */}
           {meta?.imageUrl ? (
             <div className="relative h-52 w-full">
@@ -122,7 +94,6 @@ export default async function ReleasePage({ params }: { params: Promise<{ id: st
             <ArrowLeft className="size-4" /> Back to all releases
           </Link>
         </Button>
-        </div>
       </main>
       <SiteFooter />
     </>
