@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Building2, Check, Copy, ShieldCheck } from "lucide-react";
+import { Building2, Check, Copy, Download, ShieldCheck } from "lucide-react";
 
 const STORAGE_KEY = "singleton_credential";
 const LEGACY_TOKEN_KEY = "singleton_admin_token"; // pre-tenancy bare admin token
@@ -125,6 +125,30 @@ function NewKeyPanel({
   onContinue: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+
+  function downloadKey() {
+    // CSV mirroring the familiar cloud access-key download. Fields are quoted and
+    // a leading formula character on the (user-supplied) name is neutralized, so
+    // the file can't trigger spreadsheet formula injection.
+    const cell = (s: string) => `"${(/^[=+\-@]/.test(s) ? `'${s}` : s).replace(/"/g, '""')}"`;
+    const rows = [
+      ["Operator", "Operator key", "Sign-in URL"],
+      [providerName, apiKey, `${window.location.origin}/admin`],
+    ];
+    const csv = rows.map((r) => r.map(cell).join(",")).join("\r\n") + "\r\n";
+    const slug =
+      providerName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "operator";
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `singleton-${slug}-operator-key.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast.success("Operator key downloaded.");
+  }
+
   return (
     <div className="space-y-3">
       <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
@@ -141,19 +165,29 @@ function NewKeyPanel({
             type="button"
             size="sm"
             variant="secondary"
+            aria-label="Copy operator key"
             onClick={async () => {
               try {
                 await navigator.clipboard.writeText(apiKey);
                 setCopied(true);
                 toast.success("Operator key copied.");
               } catch {
-                toast.error("Copy failed — select and copy it manually.");
+                toast.error("Copy failed. Select and copy it manually.");
               }
             }}
           >
             {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
           </Button>
         </div>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="mt-2 w-full"
+          onClick={downloadKey}
+        >
+          <Download className="size-4" /> Download key (.csv)
+        </Button>
       </div>
       <Button className="w-full" onClick={onContinue}>
         Continue to dashboard
