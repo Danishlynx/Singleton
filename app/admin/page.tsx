@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { TokenGate, SignOutButton, adminFetch } from "@/components/admin/admin-auth";
 import type { ReleaseStateDTO } from "@/components/intake-client";
@@ -74,6 +75,7 @@ function PosterPreview({ url }: { url: string }) {
 }
 
 function CreateRelease({ token, onCreated }: { token: string; onCreated: () => void }) {
+  const router = useRouter();
   const [title, setTitle] = useState("Spring vaccination slots");
   const [capacity, setCapacity] = useState("200");
   const [shardCount, setShardCount] = useState("32");
@@ -128,6 +130,14 @@ function CreateRelease({ token, onCreated }: { token: string; onCreated: () => v
       }
       if (!res.ok) {
         toast.error(data.error ?? "Failed to create release.");
+        return;
+      }
+      // Forward momentum: land on the new release's monitor so the operator can
+      // explore it (live stats, run a burst, view the public page) instead of
+      // being left staring at the just-submitted form.
+      if (data.release?.id) {
+        toast.success("Release created — opening its monitor.");
+        router.push(`/admin/${data.release.id}`);
         return;
       }
       toast.success("Release created.");
