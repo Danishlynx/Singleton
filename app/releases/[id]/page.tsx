@@ -27,18 +27,26 @@ export default async function ReleasePage({ params }: { params: Promise<{ id: st
   const [state, meta] = await Promise.all([getReleaseState(id), getReleaseMeta(id)]);
   if (!state) notFound();
   const isLottery = state.mode === "lottery";
+  const bgImage = meta?.imageUrl;
 
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto w-full max-w-lg flex-1 px-4 py-12">
-        <Link
-          href="/#releases"
-          className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="size-3.5" aria-hidden="true" /> All releases
-        </Link>
-        <Card className="overflow-hidden pt-0">
+      <main className="relative flex-1 overflow-hidden">
+        {/* The event image fills the page behind the card, with a glass veil on
+            top: enough blur + opacity that the source image's pixelation/blur is
+            no longer perceptible. The card stays solid on top, unchanged. */}
+        {bgImage && (
+          <div className="absolute inset-0" aria-hidden="true">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={bgImage} alt="" className="h-full w-full object-cover" />
+            {/* Dark vignette: edges fall off to draw the eye to the glass card
+                and add cinematic depth, while the center stays clear photo. */}
+            <div className="absolute inset-0 bg-[radial-gradient(125%_125%_at_50%_45%,transparent_42%,rgba(0,0,0,0.55)_100%)]" />
+          </div>
+        )}
+        <div className="relative z-10 mx-auto w-full max-w-lg px-4 py-12">
+        <Card className="overflow-hidden border border-white/30 bg-card/70 pt-0 shadow-xl shadow-black/10 ring-1 ring-white/10 backdrop-blur-xl supports-[backdrop-filter]:bg-card/60">
           {/* Vendor branding: poster if provided, calm gradient fallback otherwise */}
           {meta?.imageUrl ? (
             <div className="relative h-52 w-full">
@@ -85,15 +93,23 @@ export default async function ReleasePage({ params }: { params: Promise<{ id: st
             ) : (
               <IntakeClient initial={state} />
             )}
+            {/* Back link lives INSIDE the card so it stays legible regardless of
+                the background image behind the page. */}
+            <div className="mt-5 border-t border-dashed pt-3">
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="w-full text-muted-foreground hover:text-foreground"
+              >
+                <Link href="/#releases">
+                  <ArrowLeft className="size-4" /> Back to all releases
+                </Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
-        {/* Repeated on purpose: after claiming or entering, the visitor is at
-            the bottom of the card and the top link is off-screen. */}
-        <Button asChild variant="ghost" className="mt-4 w-full">
-          <Link href="/#releases">
-            <ArrowLeft className="size-4" /> Back to all releases
-          </Link>
-        </Button>
+        </div>
       </main>
       <SiteFooter />
     </>
