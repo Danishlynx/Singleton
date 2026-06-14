@@ -31,6 +31,7 @@ const CreateBody = z.object({
       description: z.string().trim().max(1000).optional(),
       venue: z.string().trim().max(200).optional(),
       eventAt: z.coerce.date().optional(),
+      category: z.string().trim().max(40).optional(),
     })
     .optional(),
 });
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
     status: "open",
   });
 
-  if (meta && (meta.imageUrl || meta.description || meta.venue || meta.eventAt)) {
+  if (meta && (meta.imageUrl || meta.description || meta.venue || meta.eventAt || meta.category)) {
     const { upsertReleaseMeta } = await import("@/db/release-meta");
     const { normalizeImageUrl } = await import("@/lib/image-url");
     await upsertReleaseMeta(release.id, {

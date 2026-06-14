@@ -1,13 +1,16 @@
 import "./load-env";
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 
 /**
- * Curated showcase seed (v2): six branded releases across both modes and several
- * lifecycle states, with ORGANIC ACTIVITY (real claims/entries through the domain
- * layer) so the landing reads as a living marketplace, not a fresh install.
+ * Curated showcase seed (v3): 54 branded releases, six per category, across both
+ * allocation modes and several lifecycle states, with ORGANIC ACTIVITY (real
+ * claims/entries through the domain layer) so the landing reads as a living
+ * marketplace, not a fresh install.
  *
- * Every poster URL is verified to serve image/* before anything is written —
- * a showcase with broken images is worse than none. All posters visually vetted.
+ * The event list lives in scripts/showcase-events.json (curated + image-verified
+ * out of band). Every poster URL is re-checked to serve image/* before anything
+ * is written — a showcase with broken images is worse than none.
  *
  *   npx tsx scripts/seed-showcase.ts
  *
@@ -23,6 +26,7 @@ interface ShowcaseSpec {
   shardCount: number;
   mode: "fcfs" | "lottery";
   windowDays?: number; // lottery only
+  category: string; // slug from src/lib/categories.ts
   image: string;
   description: string;
   venue?: string;
@@ -31,166 +35,33 @@ interface ShowcaseSpec {
   entries?: number; // lottery activity
 }
 
-const SHOWCASE: ShowcaseSpec[] = [
-  {
-    provider: "Aurora Live Events",
-    title: "Midnight Frequencies World Tour",
-    capacity: 500,
-    shardCount: 32,
-    mode: "fcfs",
-    image:
-      "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=2000&q=85&auto=format&fit=crop",
-    description:
-      "500 floor tickets released at once. First come, first served, and provably never more than 500.",
-    venue: "City Arena, Mumbai",
-    eventInDays: 30,
-    claims: 42,
-  },
-  {
-    provider: "GameDev Germany e.V.",
-    title: "GameDev Germany Founders' Night",
-    capacity: 200,
-    shardCount: 32,
-    mode: "fcfs",
-    image: "https://drive.google.com/thumbnail?id=1YFVkgr6VSMFQDKH33Msriexso9ZNUKKf&sz=w2000",
-    description:
-      "A night for the people who ship worlds. 200 seats, allocated in arrival order on a public ledger.",
-    venue: "Rosalind Avenue, Berlin",
-    eventInDays: 33,
-    claims: 17,
-  },
-  {
-    provider: "CloudConf Europe",
-    title: "CloudConf 2026: serverless databases workshop",
-    capacity: 150,
-    shardCount: 32,
-    mode: "fcfs",
-    image:
-      "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=2000&q=85&auto=format&fit=crop",
-    description:
-      "150 hands-on lab seats for the serverless databases track. Fittingly, every seat here is allocated by one ACID transaction.",
-    venue: "Hall 7, RAI Amsterdam",
-    eventInDays: 21,
-    claims: 38,
-  },
-  {
-    provider: "Sunrise Community Clinic",
-    title: "Free flu vaccination, Saturday block",
-    capacity: 120,
-    shardCount: 16,
-    mode: "lottery",
-    windowDays: 3,
-    image:
-      "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=2000&q=85&auto=format&fit=crop",
-    description:
-      "Enter any time before Saturday's draw. A bot that enters in the first second has exactly the same odds as you.",
-    venue: "Sunrise Clinic, Hall B",
-    eventInDays: 4,
-    entries: 28,
-  },
-  {
-    provider: "Harbour Hack Collective",
-    title: "Harbour Hackathon 2026 team slots",
-    capacity: 80,
-    shardCount: 16,
-    mode: "lottery",
-    windowDays: 4,
-    image:
-      "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=2000&q=85&auto=format&fit=crop",
-    description:
-      "80 team slots for a weekend of building. Enter any time this week; the draw treats every team the same.",
-    venue: "Innovation Dock, Rotterdam",
-    eventInDays: 40,
-    entries: 57,
-  },
-  {
-    provider: "Form & Field",
-    title: "FF-01 'Indigo' limited drop",
-    capacity: 24,
-    shardCount: 8,
-    mode: "lottery",
-    windowDays: 1,
-    image:
-      "https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=2000&q=85&auto=format&fit=crop",
-    description:
-      "24 pairs, already oversubscribed. The draw seed is committed below, and you can re-run the draw yourself after it reveals.",
-    venue: "Online, ships worldwide",
-    entries: 61,
-  },
-  {
-    provider: "Northside Animal Shelter",
-    title: "Puppy adoption Saturday appointments",
-    capacity: 40,
-    shardCount: 8,
-    mode: "fcfs",
-    image:
-      "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=2000&q=85&auto=format&fit=crop",
-    description:
-      "40 meet-and-adopt appointments for Saturday morning. First come, first served, and the shelter can prove nobody jumped the queue.",
-    venue: "Northside Shelter, Hall 2",
-    eventInDays: 5,
-    claims: 11,
-  },
-  {
-    provider: "Åsen Supper Club",
-    title: "Chef's table, one night only",
-    capacity: 12,
-    shardCount: 4,
-    mode: "fcfs",
-    image:
-      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=2000&q=85&auto=format&fit=crop",
-    description: "Twelve seats at the pass. When they're gone, the ledger proves it.",
-    venue: "Åsen Supper Club, Oslo",
-    eventInDays: 9,
-    claims: 7,
-  },
-  {
-    provider: "Hilltop Observatory",
-    title: "Stargazing night: telescope sessions",
-    capacity: 60,
-    shardCount: 8,
-    mode: "lottery",
-    windowDays: 5,
-    image:
-      "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=2000&q=85&auto=format&fit=crop",
-    description:
-      "60 telescope slots under a dark sky, already oversubscribed. Winners are drawn from the whole window, not from whoever clicked fastest.",
-    venue: "Hilltop Observatory ridge deck",
-    eventInDays: 18,
-    entries: 96,
-  },
-  {
-    provider: "City Marathon Foundation",
-    title: "City Marathon 2027 guaranteed entries",
-    capacity: 1000,
-    shardCount: 32,
-    mode: "lottery",
-    windowDays: 6,
-    image:
-      "https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?w=2000&q=85&auto=format&fit=crop",
-    description:
-      "1,000 guaranteed race entries by fair draw. No refresh-mashing at 6am, because the window is open for a week.",
-    venue: "Start line: Harbour Bridge",
-    eventInDays: 200,
-    entries: 134,
-  },
-];
-
-async function verifyImages(): Promise<void> {
-  for (const s of SHOWCASE) {
-    const res = await fetch(s.image, { method: "HEAD" });
-    const type = res.headers.get("content-type") ?? "";
-    if (!res.ok || !type.startsWith("image/")) {
-      throw new Error(`Poster not serving an image (${res.status} ${type}): ${s.title}`);
-    }
-  }
-  console.log(`All ${SHOWCASE.length} posters verified (HTTP image/*).`);
-}
+const SHOWCASE: ShowcaseSpec[] = JSON.parse(
+  readFileSync(new URL("./showcase-events.json", import.meta.url), "utf8"),
+) as ShowcaseSpec[];
 
 async function runBatches<T>(items: T[], batch: number, fn: (item: T) => Promise<unknown>) {
   for (let i = 0; i < items.length; i += batch) {
     await Promise.all(items.slice(i, i + batch).map(fn));
   }
+}
+
+async function verifyImages(): Promise<void> {
+  const failures: string[] = [];
+  await runBatches(SHOWCASE, 10, async (s) => {
+    try {
+      const res = await fetch(s.image, { method: "HEAD" });
+      const type = res.headers.get("content-type") ?? "";
+      if (!res.ok || !type.startsWith("image/")) {
+        failures.push(`${s.title}: ${res.status} ${type}`);
+      }
+    } catch {
+      failures.push(`${s.title}: fetch failed`);
+    }
+  });
+  if (failures.length > 0) {
+    throw new Error(`Posters not serving an image:\n  - ${failures.join("\n  - ")}`);
+  }
+  console.log(`All ${SHOWCASE.length} posters verified (HTTP image/*).`);
 }
 
 async function main(): Promise<void> {
@@ -230,6 +101,7 @@ async function main(): Promise<void> {
       description: s.description,
       venue: s.venue,
       eventAt: s.eventInDays ? new Date(now + s.eventInDays * DAY) : undefined,
+      category: s.category,
     });
 
     // Organic activity through the real domain paths.
@@ -243,14 +115,13 @@ async function main(): Promise<void> {
     }
 
     console.log(
-      `  ${s.mode === "lottery" ? "lottery" : "fcfs   "} - ${s.title}` +
-        `  -> /releases/${release.id}` +
+      `  ${s.mode === "lottery" ? "lottery" : "fcfs   "} [${s.category}] ${s.title}` +
         (s.claims ? `  (${s.claims} claimed)` : "") +
         (s.entries ? `  (${s.entries} entries)` : ""),
     );
   }
 
-  console.log("Showcase v2 seeded.");
+  console.log(`Showcase seeded: ${SHOWCASE.length} releases.`);
 }
 
 main()

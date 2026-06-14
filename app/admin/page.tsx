@@ -28,6 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ArrowRight, Loader2, Plus, Trash2 } from "lucide-react";
 import { normalizeImageUrl } from "@/lib/image-url";
+import { CATEGORIES } from "@/lib/categories";
 
 /**
  * Live poster preview: shows exactly what will render publicly, including the
@@ -99,6 +100,7 @@ function CreateRelease({ cred, onCreated }: { cred: Credential; onCreated: () =>
   const [description, setDescription] = useState("");
   const [venue, setVenue] = useState("");
   const [eventAt, setEventAt] = useState("");
+  const [category, setCategory] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function submit() {
@@ -117,6 +119,7 @@ function CreateRelease({ cred, onCreated }: { cred: Credential; onCreated: () =>
         description: description.trim() || undefined,
         venue: venue.trim() || undefined,
         eventAt: eventAt ? new Date(eventAt).toISOString() : undefined,
+        category: category || undefined,
       };
       const hasMeta = Object.values(meta).some(Boolean);
       const res = await apiFetch(cred, "/api/releases", {
@@ -272,6 +275,24 @@ function CreateRelease({ cred, onCreated }: { cred: Credential; onCreated: () =>
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
+        </div>
+        <div className="space-y-2 sm:col-span-2">
+          <Label htmlFor="category">
+            Category <span className="text-muted-foreground">(optional)</span>
+          </Label>
+          <select
+            id="category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            <option value="">No category</option>
+            {CATEGORIES.map((c) => (
+              <option key={c.slug} value={c.slug}>
+                {c.label}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="space-y-2">
           <Label htmlFor="venue">

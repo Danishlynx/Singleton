@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { query } from "@/db/query";
 
 /**
@@ -23,8 +24,20 @@ export const TEST_TOOLING_PATTERNS = [
   "control",
 ];
 
-/** Curated showcase titles (scripts/seed-showcase.ts). Deleting these too
- * turns the cleanup into a full demo reset before re-seeding. */
+/** Exact titles of the current showcase, read from the seed's event list. */
+function loadShowcaseTitles(): string[] {
+  try {
+    const raw = readFileSync(new URL("./showcase-events.json", import.meta.url), "utf8");
+    return (JSON.parse(raw) as Array<{ title: string }>).map((e) => e.title);
+  } catch {
+    return [];
+  }
+}
+
+/** Showcase + legacy demo titles. Deleting these turns the cleanup into a full
+ * demo reset before re-seeding. The current showcase titles come straight from
+ * scripts/showcase-events.json; the legacy prefixes clear any older seed still
+ * in the database. */
 export const DEMO_SEED_PATTERNS = [
   "Spring vaccination slots",
   "Midnight Frequencies%",
@@ -37,6 +50,7 @@ export const DEMO_SEED_PATTERNS = [
   "Chef's table%",
   "Stargazing%",
   "City Marathon%",
+  ...loadShowcaseTitles(),
 ];
 
 const BATCH = 2000; // safely under the 3,000-row per-transaction cap

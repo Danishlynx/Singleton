@@ -190,7 +190,7 @@ export type ReleaseListing = ReleaseState & {
 export async function listReleaseStates(limit = 12): Promise<ReleaseListing[]> {
   const { getReleaseMetaMap } = await import("@/db/release-meta");
   const rels = await query<Release>(
-    `SELECT ${RELEASE_COLUMNS} FROM releases ORDER BY created_at DESC LIMIT ${Math.max(1, Math.min(50, limit))}`,
+    `SELECT ${RELEASE_COLUMNS} FROM releases ORDER BY created_at DESC LIMIT ${Math.max(1, Math.min(100, limit))}`,
   );
   if (rels.length === 0) return [];
   const ids = rels.map((r) => r.id);
