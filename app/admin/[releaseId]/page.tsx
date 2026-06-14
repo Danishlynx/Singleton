@@ -3,7 +3,7 @@
 import { use, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
-import { TokenGate, adminFetch } from "@/components/admin/admin-auth";
+import { AuthGate, apiFetch, type Credential } from "@/components/admin/admin-auth";
 import type { ReleaseStateDTO } from "@/components/intake-client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -53,7 +53,7 @@ function Stat({
   );
 }
 
-function Monitor({ token, releaseId }: { token: string; releaseId: string }) {
+function Monitor({ cred, releaseId }: { cred: Credential; releaseId: string }) {
   const [state, setState] = useState<ReleaseStateDTO | null>(null);
   const [drawing, setDrawing] = useState(false);
 
@@ -75,7 +75,7 @@ function Monitor({ token, releaseId }: { token: string; releaseId: string }) {
   async function runDraw() {
     setDrawing(true);
     try {
-      const res = await adminFetch(token, `/api/releases/${releaseId}/draw`, { method: "POST" });
+      const res = await apiFetch(cred, `/api/releases/${releaseId}/draw`, { method: "POST" });
       const data = (await res.json().catch(() => ({}))) as {
         status?: string;
         winners?: number;
@@ -177,7 +177,7 @@ function Monitor({ token, releaseId }: { token: string; releaseId: string }) {
   );
 }
 
-function SimulatePanel({ token, releaseId }: { token: string; releaseId: string }) {
+function SimulatePanel({ cred, releaseId }: { cred: Credential; releaseId: string }) {
   const [attempts, setAttempts] = useState("500");
   const [concurrency, setConcurrency] = useState("50");
   const [busy, setBusy] = useState(false);
@@ -186,12 +186,12 @@ function SimulatePanel({ token, releaseId }: { token: string; releaseId: string 
   async function run() {
     setBusy(true);
     try {
-      const res = await adminFetch(token, `/api/releases/${releaseId}/simulate`, {
+      const res = await apiFetch(cred, `/api/releases/${releaseId}/simulate`, {
         method: "POST",
         body: JSON.stringify({ attempts, concurrency }),
       });
       if (res.status === 401) {
-        toast.error("Invalid admin token.");
+        toast.error("Your session expired. Sign in again.");
         return;
       }
       const data = (await res.json()) as SimMetrics & { error?: string };
@@ -311,14 +311,16 @@ export default function AdminReleasePage({ params }: { params: Promise<{ release
         <Link href="/admin" className="text-sm text-muted-foreground underline underline-offset-4">
           ← All releases
         </Link>
-        <TokenGate>
-          {(token) => (
+        <AuthGate>
+          {(cred) => (
             <div className="space-y-6">
-              <Monitor token={token} releaseId={releaseId} />
-              <SimulatePanel token={token} releaseId={releaseId} />
+              <Monitor cred={cred} releaseId={releaseId} />
+              {/* The burst simulator is a platform/demo stress tool, not an
+                  operator feature (and the API restricts it to platform). */}
+              {cred.kind === "platform" && <SimulatePanel cred={cred} releaseId={releaseId} />}
             </div>
           )}
-        </TokenGate>
+        </AuthGate>
       </main>
     </>
   );

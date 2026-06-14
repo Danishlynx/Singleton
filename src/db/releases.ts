@@ -78,6 +78,37 @@ export async function setReleaseStatus(id: string, status: ReleaseStatus): Promi
   await query("UPDATE releases SET status = $2 WHERE id = $1", [id, status]);
 }
 
+const DELETE_BATCH = 2000; // safely under DSQL's 3,000-row per-transaction cap
+
+/** Delete a child table's rows for one release in looped batches (each its own txn). */
+async function deleteChildrenBatched(table: string, releaseId: string): Promise<void> {
+  for (;;) {
+    const rows = await query<{ id: string }>(
+      `DELETE FROM ${table} WHERE id IN (
+         SELECT id FROM ${table} WHERE release_id = $1 LIMIT ${DELETE_BATCH}
+       ) RETURNING id`,
+      [releaseId],
+    );
+    if (rows.length < DELETE_BATCH) return;
+  }
+}
+
+/**
+ * Delete a release and all of its child rows. DSQL has no FK cascade, so children
+ * are removed explicitly; the high-volume tables (allocations/waitlist/entries)
+ * are deleted in batches under the 3,000-row transaction cap. Authorization
+ * (platform vs owning provider) is enforced at the API layer before this runs.
+ */
+export async function deleteRelease(releaseId: string): Promise<void> {
+  await deleteChildrenBatched("allocations", releaseId);
+  await deleteChildrenBatched("waitlist", releaseId);
+  await deleteChildrenBatched("entries", releaseId);
+  await deleteChildrenBatched("release_shards", releaseId);
+  await query("DELETE FROM lottery_config WHERE release_id = $1", [releaseId]);
+  await query("DELETE FROM release_meta WHERE release_id = $1", [releaseId]);
+  await query("DELETE FROM releases WHERE id = $1", [releaseId]);
+}
+
 export interface ReleaseState {
   releaseId: string;
   title: string;
@@ -144,6 +175,10 @@ export async function getReleaseState(id: string): Promise<ReleaseState | undefi
 
 export type ReleaseListing = ReleaseState & {
   meta: import("@/db/release-meta").ReleaseMeta | null;
+  // Owning provider — used by the admin console to scope the delete control to
+  // each operator's own releases. Not a secret (the provider api_key is never
+  // serialized); the public landing simply ignores it.
+  providerId: string;
 };
 
 /**
@@ -198,6 +233,7 @@ export async function listReleaseStates(limit = 12): Promise<ReleaseListing[]> {
       isOpen: rel.status === "open" && opensAt.getTime() <= Date.now(),
       mode: "fcfs",
       meta: metas.get(rel.id) ?? null,
+      providerId: rel.provider_id,
     };
     const lottery = lotteryBy.get(rel.id);
     if (!lottery) return base;

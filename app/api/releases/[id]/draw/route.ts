@@ -1,19 +1,20 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { draw, DrawError } from "@/domain/draw";
-import { isAdminRequest } from "@/lib/admin";
+import { authorizeReleaseMutation } from "@/lib/admin";
 import { isOccConflict } from "@/db/retry";
 
-// Mode B: run the commit-reveal draw. Admin-gated; idempotent (drawn_at guard),
-// so calling it repeatedly is safe.
+// Mode B: run the commit-reveal draw. Restricted to the platform admin or the
+// owning provider; idempotent (drawn_at guard), so repeated calls are safe.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  if (!isAdminRequest(req)) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
   const { id } = await params;
+  const authz = await authorizeReleaseMutation(req, id);
+  if (!authz.ok) {
+    return NextResponse.json({ error: authz.error }, { status: authz.status });
+  }
 
   try {
     const result = await draw(id);

@@ -13,6 +13,21 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [{ protocol: "https", hostname: "**" }],
   },
+  // Defense-in-depth for the admin magic link: never attach a Referer (which
+  // could otherwise carry a token-bearing URL) to subresource requests from the
+  // admin area. The token now travels in the fragment, but this is a free backstop.
+  async headers() {
+    return [
+      {
+        source: "/admin/:path*",
+        headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
+      },
+      {
+        source: "/admin",
+        headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

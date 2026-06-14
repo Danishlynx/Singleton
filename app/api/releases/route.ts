@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createProvider, createRelease, listReleaseStates } from "@/db/releases";
-import { isAdminRequest } from "@/lib/admin";
+import { resolveActor } from "@/lib/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,9 +35,10 @@ const CreateBody = z.object({
     .optional(),
 });
 
-/** Admin: create a release (status 'open'; opens_at gates claiming). */
+/** Admin/operator: create a release (status 'open'; opens_at gates claiming). */
 export async function POST(req: NextRequest) {
-  if (!isAdminRequest(req)) {
+  const actor = await resolveActor(req);
+  if (actor.role === "none") {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   let body: unknown;
@@ -63,7 +64,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const providerId = await createProvider(providerName);
+  // Ownership: an operator creates releases under their own identity (so they
+  // can later manage/delete them); the platform admin creates under the named
+  // provider, defaulting to a shared "Demo Provider".
+  const providerId =
+    actor.role === "provider" ? actor.providerId : await createProvider(providerName);
   const release = await createRelease({
     providerId,
     title,

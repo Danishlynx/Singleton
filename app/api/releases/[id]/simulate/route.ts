@@ -40,6 +40,9 @@ async function runPool<T>(
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  // The burst is a stress/demo amplifier (up to 2000 claims × 100 concurrency), not
+  // an operator feature — restrict it to the platform admin so a self-registered
+  // operator key can't turn it into a write-amplification DoS on the cluster.
   if (!isAdminRequest(req)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }

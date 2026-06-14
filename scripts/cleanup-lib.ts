@@ -18,6 +18,7 @@ export const TEST_TOOLING_PATTERNS = [
   "E2E %",
   "Integration release",
   "Lottery integration release",
+  "Ownership test release",
   "MR release",
   "control",
 ];

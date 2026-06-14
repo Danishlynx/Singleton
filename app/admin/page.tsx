@@ -4,16 +4,29 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
-import { TokenGate, SignOutButton, adminFetch } from "@/components/admin/admin-auth";
+import {
+  AuthGate,
+  SignOutButton,
+  apiFetch,
+  type Credential,
+} from "@/components/admin/admin-auth";
 import type { ReleaseStateDTO } from "@/components/intake-client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { ArrowRight, Loader2, Plus } from "lucide-react";
+import { ArrowRight, Loader2, Plus, Trash2 } from "lucide-react";
 import { normalizeImageUrl } from "@/lib/image-url";
 
 /**
@@ -74,7 +87,7 @@ function PosterPreview({ url }: { url: string }) {
   );
 }
 
-function CreateRelease({ token, onCreated }: { token: string; onCreated: () => void }) {
+function CreateRelease({ cred, onCreated }: { cred: Credential; onCreated: () => void }) {
   const router = useRouter();
   const [title, setTitle] = useState("Spring vaccination slots");
   const [capacity, setCapacity] = useState("200");
@@ -106,7 +119,7 @@ function CreateRelease({ token, onCreated }: { token: string; onCreated: () => v
         eventAt: eventAt ? new Date(eventAt).toISOString() : undefined,
       };
       const hasMeta = Object.values(meta).some(Boolean);
-      const res = await adminFetch(token, "/api/releases", {
+      const res = await apiFetch(cred, "/api/releases", {
         method: "POST",
         body: JSON.stringify({
           title,
@@ -297,9 +310,19 @@ function CreateRelease({ token, onCreated }: { token: string; onCreated: () => v
   );
 }
 
-function ReleaseList({ refreshKey }: { refreshKey: number }) {
+function ReleaseList({
+  cred,
+  refreshKey,
+  onChanged,
+}: {
+  cred: Credential;
+  refreshKey: number;
+  onChanged: () => void;
+}) {
   const [releases, setReleases] = useState<ReleaseStateDTO[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<ReleaseStateDTO | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -316,6 +339,40 @@ function ReleaseList({ refreshKey }: { refreshKey: number }) {
   useEffect(() => {
     void load();
   }, [load, refreshKey]);
+
+  // The server is the source of truth (it re-checks ownership on DELETE); this
+  // only decides whether to OFFER the control. Platform sees it on every
+  // release; an operator only on the releases they own.
+  function canDelete(r: ReleaseStateDTO): boolean {
+    return (
+      cred.kind === "platform" ||
+      (cred.kind === "provider" && r.providerId === cred.providerId)
+    );
+  }
+
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try {
+      const res = await apiFetch(cred, `/api/releases/${pendingDelete.releaseId}`, {
+        method: "DELETE",
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (res.ok) {
+        toast.success("Release deleted.");
+        setPendingDelete(null);
+        onChanged();
+      } else if (res.status === 403) {
+        toast.error("You can only delete releases you created.");
+      } else if (res.status === 401) {
+        toast.error("Your session expired. Sign in again.");
+      } else {
+        toast.error(data.error ?? "Delete failed.");
+      }
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   if (!loaded) {
     return (
@@ -357,35 +414,82 @@ function ReleaseList({ refreshKey }: { refreshKey: number }) {
                   Monitor <ArrowRight className="size-4" />
                 </Link>
               </Button>
+              {canDelete(r) && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-destructive"
+                  aria-label={`Delete ${r.title}`}
+                  onClick={() => setPendingDelete(r)}
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              )}
             </div>
           </CardHeader>
         </Card>
       ))}
+
+      <Dialog open={pendingDelete !== null} onOpenChange={(o) => !o && setPendingDelete(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete this release?</DialogTitle>
+            <DialogDescription>
+              {pendingDelete?.title} and all of its claims, entries, waitlist, and ledger rows will
+              be permanently removed. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setPendingDelete(null)} disabled={deleting}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={deleting}
+              data-testid="confirm-delete"
+            >
+              {deleting ? <Loader2 className="size-4 motion-safe:animate-spin" /> : <Trash2 className="size-4" />}
+              Delete release
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
 export default function AdminPage() {
   const [refreshKey, setRefreshKey] = useState(0);
+  const bump = () => setRefreshKey((k) => k + 1);
   return (
     <>
       <SiteHeader />
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-12">
-        <TokenGate>
-          {(token) => (
+        <AuthGate>
+          {(cred) => (
             <div className="space-y-8">
-              <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold tracking-tight">Admin</h1>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h1 className="text-2xl font-semibold tracking-tight">Admin</h1>
+                  <p className="text-sm text-muted-foreground">
+                    {cred.kind === "platform"
+                      ? "Platform admin: managing all releases."
+                      : `Signed in as ${cred.providerName}.`}
+                  </p>
+                </div>
                 <SignOutButton />
               </div>
-              <CreateRelease token={token} onCreated={() => setRefreshKey((k) => k + 1)} />
+              <CreateRelease cred={cred} onCreated={bump} />
               <section className="space-y-3">
-                <h2 className="text-lg font-medium tracking-tight">Releases</h2>
-                <ReleaseList refreshKey={refreshKey} />
+                <h2 className="text-lg font-medium tracking-tight">
+                  {cred.kind === "platform" ? "All releases" : "Releases"}
+                </h2>
+                <ReleaseList cred={cred} refreshKey={refreshKey} onChanged={bump} />
               </section>
             </div>
           )}
-        </TokenGate>
+        </AuthGate>
       </main>
     </>
   );

@@ -53,7 +53,8 @@ Implementation**.
 
 > The rules require free, unrestricted judge access and explicitly allow credentials in
 > testing instructions. The admin magic link signs judges in with one click
-> (`/admin?token=…` stores the token and scrubs it from the URL).
+> (`/admin#token=…` stores the token and scrubs it from the URL). The token rides in the
+> URL fragment, which browsers never send to the server, so it stays out of access logs.
 
 Template — fill the deployed URL + the production ADMIN_TOKEN before submitting:
 
@@ -68,12 +69,18 @@ PARTICIPANT FLOW (no credentials):
    commitment; after the draw, "Re-run the draw in your browser" on the verify
    page recomputes every winner client-side (MATCH banner).
 
-ADMIN FLOW (one-click sign-in):
-<VERCEL_URL>/admin?token=<ADMIN_TOKEN>
+PLATFORM ADMIN FLOW (one-click sign-in):
+<VERCEL_URL>/admin#token=<ADMIN_TOKEN>
 • Create a release (either mode, optional poster image URL).
 • Open a release monitor → "Run burst" fires hundreds of concurrent claims and
   shows the live invariant audit (oversells: 0, latency, OCC retries).
 • Lottery releases: "Run draw" once the window closes.
+• Platform admin can delete any release.
+
+OPERATOR (TENANT) FLOW (self-serve, no shared token):
+At <VERCEL_URL>/admin choose "Operator" → "Create operator account" → you get a
+secret key and your own dashboard. Releases you create are owned by you: you can
+delete only your own; another operator's releases are off-limits (server-enforced).
 
 The cluster (Aurora DSQL, us-east-1) and this deployment stay up through the
 entire judging period.

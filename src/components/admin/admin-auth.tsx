@@ -5,114 +5,354 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { Building2, Check, Copy, ShieldCheck } from "lucide-react";
 
-const STORAGE_KEY = "singleton_admin_token";
+const STORAGE_KEY = "singleton_credential";
+const LEGACY_TOKEN_KEY = "singleton_admin_token"; // pre-tenancy bare admin token
 
-export function useAdminToken() {
-  const [token, setTokenState] = useState<string | null>(null);
+/**
+ * Who the console is acting as.
+ *  - platform: the master ADMIN_TOKEN (judges) — super-admin over everything.
+ *  - provider: an operator authenticated by their secret api key — scoped to
+ *    the releases they own.
+ */
+export type Credential =
+  | { kind: "platform"; token: string }
+  | { kind: "provider"; key: string; providerId: string; providerName: string };
+
+function loadCredential(): Credential | null {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) {
+    try {
+      return JSON.parse(raw) as Credential;
+    } catch {
+      /* corrupt — fall through */
+    }
+  }
+  const legacy = localStorage.getItem(LEGACY_TOKEN_KEY);
+  if (legacy) return { kind: "platform", token: legacy };
+  return null;
+}
+
+function saveCredential(cred: Credential | null) {
+  if (!cred) {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
+    return;
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(cred));
+  localStorage.removeItem(LEGACY_TOKEN_KEY);
+}
+
+export function useCredential() {
+  const [cred, setCredState] = useState<Credential | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    // Magic link for judges/reviewers: /admin?token=... signs in directly (the
-    // token is published in the submission's testing instructions, per the
-    // hackathon rules). The param is scrubbed from the URL immediately so it
-    // doesn't linger in the address bar or get copied around.
-    const params = new URLSearchParams(window.location.search);
-    const fromUrl = params.get("token");
+    // Magic link for judges/reviewers. Prefer the URL FRAGMENT (/admin#token=...):
+    // a fragment is never sent to the server, so the master token never lands in
+    // access logs or a Referer header. The legacy ?token= query form is still
+    // accepted for older links. Either way the secret is scrubbed from the URL.
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const queryParams = new URLSearchParams(window.location.search);
+    const fromUrl = hashParams.get("token") ?? queryParams.get("token");
     if (fromUrl) {
-      localStorage.setItem(STORAGE_KEY, fromUrl);
-      params.delete("token");
-      const rest = params.toString();
-      window.history.replaceState(
-        null,
-        "",
-        window.location.pathname + (rest ? `?${rest}` : ""),
-      );
-      setTokenState(fromUrl);
+      const c: Credential = { kind: "platform", token: fromUrl };
+      saveCredential(c);
+      queryParams.delete("token");
+      const rest = queryParams.toString();
+      // Rebuild without the fragment and without the token query param.
+      window.history.replaceState(null, "", window.location.pathname + (rest ? `?${rest}` : ""));
+      setCredState(c);
       setLoaded(true);
       return;
     }
-    setTokenState(localStorage.getItem(STORAGE_KEY));
+    setCredState(loadCredential());
     setLoaded(true);
   }, []);
 
-  function setToken(t: string | null) {
-    if (t) localStorage.setItem(STORAGE_KEY, t);
-    else localStorage.removeItem(STORAGE_KEY);
-    setTokenState(t);
+  function setCredential(c: Credential | null) {
+    saveCredential(c);
+    setCredState(c);
   }
 
-  return { token, setToken, loaded };
+  return { cred, setCredential, loaded };
 }
 
-/** fetch() with the admin token + JSON content-type attached. */
-export function adminFetch(token: string, url: string, init?: RequestInit): Promise<Response> {
+/** The auth header for a credential: master token vs. operator key. */
+export function authHeaders(cred: Credential): Record<string, string> {
+  return cred.kind === "platform"
+    ? { "x-admin-token": cred.token }
+    : { "x-provider-key": cred.key };
+}
+
+/** fetch() with the right auth header + JSON content-type attached. */
+export function apiFetch(cred: Credential, url: string, init?: RequestInit): Promise<Response> {
   return fetch(url, {
     ...init,
     headers: {
       "content-type": "application/json",
-      "x-admin-token": token,
+      ...authHeaders(cred),
       ...(init?.headers ?? {}),
     },
   });
 }
 
-export function TokenGate({ children }: { children: (token: string) => ReactNode }) {
-  const { token, setToken, loaded } = useAdminToken();
-  const [input, setInput] = useState("");
+export function SignOutButton() {
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={() => {
+        saveCredential(null);
+        window.location.reload();
+      }}
+    >
+      Sign out
+    </Button>
+  );
+}
+
+/** Shown once after registration so the operator can save their key. */
+function NewKeyPanel({
+  providerName,
+  apiKey,
+  onContinue,
+}: {
+  providerName: string;
+  apiKey: string;
+  onContinue: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="space-y-3">
+      <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+        <p className="text-sm font-medium">Account created for {providerName}.</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          This is your operator key. Save it now: it is shown only once and lets you manage your
+          releases from any device.
+        </p>
+        <div className="mt-2 flex items-center gap-2">
+          <code className="flex-1 break-all rounded-md border border-dashed bg-background p-2 font-mono text-xs">
+            {apiKey}
+          </code>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(apiKey);
+                setCopied(true);
+                toast.success("Operator key copied.");
+              } catch {
+                toast.error("Copy failed — select and copy it manually.");
+              }
+            }}
+          >
+            {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+          </Button>
+        </div>
+      </div>
+      <Button className="w-full" onClick={onContinue}>
+        Continue to dashboard
+      </Button>
+    </div>
+  );
+}
+
+/**
+ * Gates the admin console. Resolves to either a platform or provider credential
+ * and hands it to `children`. Two ways in: register/sign in as an operator
+ * (the B2B path) or paste the platform admin token (judges).
+ */
+export function AuthGate({ children }: { children: (cred: Credential) => ReactNode }) {
+  const { cred, setCredential, loaded } = useCredential();
+  const [mode, setMode] = useState<"operator" | "platform">("operator");
+  const [companyName, setCompanyName] = useState("");
+  const [keyInput, setKeyInput] = useState("");
+  const [tokenInput, setTokenInput] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [newKey, setNewKey] = useState<{
+    providerId: string;
+    providerName: string;
+    apiKey: string;
+  } | null>(null);
 
   if (!loaded) return null;
+  if (cred) return <>{children(cred)}</>;
 
-  if (!token) {
-    return (
-      <Card className="mx-auto max-w-sm">
-        <CardHeader>
-          <CardTitle>Admin access</CardTitle>
-          <CardDescription>
-            This area is for release operators. Reviewing for the hackathon? Use the one-click
-            admin link in the submission&apos;s testing instructions. It signs you in here
-            automatically.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
+  async function register() {
+    if (!companyName.trim()) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/providers", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: companyName.trim() }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        provider?: { id: string; name: string };
+        apiKey?: string;
+        error?: string;
+      };
+      if (!res.ok || !data.provider || !data.apiKey) {
+        toast.error(data.error ?? "Could not create the operator account.");
+        return;
+      }
+      setNewKey({
+        providerId: data.provider.id,
+        providerName: data.provider.name,
+        apiKey: data.apiKey,
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function signInOperator() {
+    const key = keyInput.trim();
+    if (!key) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/providers/session", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-provider-key": key },
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        provider?: { id: string; name: string };
+        error?: string;
+      };
+      if (!res.ok || !data.provider) {
+        toast.error(data.error ?? "That operator key was not recognized.");
+        return;
+      }
+      setCredential({
+        kind: "provider",
+        key,
+        providerId: data.provider.id,
+        providerName: data.provider.name,
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card className="mx-auto max-w-md">
+      <CardHeader>
+        <CardTitle>Operator access</CardTitle>
+        <CardDescription>
+          Companies sign in to launch and manage their own releases. Reviewing for the hackathon?
+          Use the one-click admin link in the testing instructions, or the platform tab below.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <div className="flex gap-2" aria-label="Sign-in mode">
+          <Button
+            type="button"
+            size="sm"
+            variant={mode === "operator" ? "default" : "outline"}
+            aria-pressed={mode === "operator"}
+            onClick={() => setMode("operator")}
+          >
+            <Building2 className="size-4" /> Operator
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={mode === "platform" ? "default" : "outline"}
+            aria-pressed={mode === "platform"}
+            onClick={() => setMode("platform")}
+          >
+            <ShieldCheck className="size-4" /> Platform admin
+          </Button>
+        </div>
+
+        {mode === "operator" ? (
+          newKey ? (
+            <NewKeyPanel
+              providerName={newKey.providerName}
+              apiKey={newKey.apiKey}
+              onContinue={() =>
+                setCredential({
+                  kind: "provider",
+                  key: newKey.apiKey,
+                  providerId: newKey.providerId,
+                  providerName: newKey.providerName,
+                })
+              }
+            />
+          ) : (
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="company">New here? Create an operator account</Label>
+                <Input
+                  id="company"
+                  placeholder="Your company or organization"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && companyName.trim()) void register();
+                  }}
+                />
+                <Button className="w-full" onClick={register} disabled={busy || !companyName.trim()}>
+                  Create operator account
+                </Button>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="opkey">Already have an operator key?</Label>
+                <Input
+                  id="opkey"
+                  type="password"
+                  autoComplete="off"
+                  placeholder="op_…"
+                  value={keyInput}
+                  onChange={(e) => setKeyInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && keyInput.trim()) void signInOperator();
+                  }}
+                />
+                <Button
+                  variant="secondary"
+                  className="w-full"
+                  onClick={signInOperator}
+                  disabled={busy || !keyInput.trim()}
+                >
+                  Sign in
+                </Button>
+              </div>
+            </div>
+          )
+        ) : (
           <div className="space-y-2">
             <Label htmlFor="admin-token">Admin token</Label>
             <Input
               id="admin-token"
               type="password"
               autoComplete="off"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
+              value={tokenInput}
+              onChange={(e) => setTokenInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && input.trim()) setToken(input.trim());
+                if (e.key === "Enter" && tokenInput.trim())
+                  setCredential({ kind: "platform", token: tokenInput.trim() });
               }}
             />
+            <Button
+              className="w-full"
+              onClick={() =>
+                tokenInput.trim() && setCredential({ kind: "platform", token: tokenInput.trim() })
+              }
+            >
+              Continue
+            </Button>
           </div>
-          <Button className="w-full" onClick={() => input.trim() && setToken(input.trim())}>
-            Continue
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return <>{children(token)}</>;
-}
-
-export function SignOutButton() {
-  // Each useAdminToken() call owns independent state, so mutating it here would
-  // never reach TokenGate's copy. Clear the stored token and reload — the gate
-  // re-reads localStorage on mount and shows the sign-in card.
-  return (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={() => {
-        localStorage.removeItem(STORAGE_KEY);
-        window.location.reload();
-      }}
-    >
-      Sign out
-    </Button>
+        )}
+      </CardContent>
+    </Card>
   );
 }

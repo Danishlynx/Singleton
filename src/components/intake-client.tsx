@@ -26,6 +26,8 @@ export interface ReleaseStateDTO {
   entryClosesAt?: string;
   drawn?: boolean;
   seedHash?: string;
+  // Owning provider (present in the admin listing) — used to scope the delete control.
+  providerId?: string;
 }
 
 type Phase = "idle" | "claiming" | "retrying" | "secured" | "sold_out";
