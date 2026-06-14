@@ -73,7 +73,7 @@ export default async function VerifyPage({ params }: { params: Promise<{ release
               <TableRow>
                 <TableHead className="w-16">Rank</TableHead>
                 <TableHead>Secured at (UTC)</TableHead>
-                <TableHead className="text-right">Receipt id</TableHead>
+                <TableHead>Receipt id</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -90,8 +90,8 @@ export default async function VerifyPage({ params }: { params: Promise<{ release
                     <TableCell className="tabular-nums">
                       {row.claimedAt.replace("T", " ").replace("Z", "")}
                     </TableCell>
-                    <TableCell className="text-right font-mono text-xs text-muted-foreground">
-                      {row.id.slice(0, 8)}…
+                    <TableCell className="break-all font-mono text-xs text-muted-foreground">
+                      {row.id}
                     </TableCell>
                   </TableRow>
                 ))
