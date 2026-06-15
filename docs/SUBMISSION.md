@@ -4,9 +4,14 @@
 retail drops; providers pay per release / SaaS seat). Also competes for **Best Technical
 Implementation**.
 
+> **Live:** https://singleton-six.vercel.app
+>
 > Two allocation modes, both provable on Aurora DSQL: **Mode A** (first-come, sharded atomic
 > claims, live no-oversell dashboard) and **Mode B** (windowed lottery with a commit-reveal
 > draw — the verify page re-runs the entire draw in the visitor's browser and shows MATCH).
+> It is a **multi-tenant marketplace**: operators self-register and manage only their own
+> releases (server-enforced ownership), browsable through a category filter rail over a
+> 54-event, six-per-category showcase.
 > Video beat: enter the window → draw → click "Re-run the draw" → MATCH banner.
 
 ## Required items
@@ -16,14 +21,17 @@ Implementation**.
       transaction because DSQL is strongly consistent + active-active + serverless.
 - [ ] **Demo video < 3 min** (YouTube, public). Script beats:
       1. (0:00–0:25) Problem: oversold appointments / crashed ticket drops; who it's for.
-      2. (0:25–1:10) Live flow: intake countdown → claim → receipt "#n of N" → public ledger.
-      3. (1:10–2:10) The proof: admin "Run burst" → **oversells: 0**, ranks 1..N, latency +
-         OCC retries on screen; mention `npm run stress` 3,000 vs 200.
-      4. (2:10–2:45) Why Aurora DSQL: sharded counter + OCC retry diagram beat; (if built)
-         two regions, one consistent database.
-      5. (2:45–3:00) Monetization one-liner + close.
-- [ ] **Published Vercel project link** + **Vercel Team ID** (Team settings → copy ID).
-- [ ] **Architecture diagram** — `docs/architecture.png` (source `docs/architecture.svg`).
+      2. (0:25–0:55) The marketplace: category filter rail; pick a release (4K poster page).
+      3. (0:55–1:30) Live flow: claim → receipt "#n of N" + QR → public ledger (full receipt id).
+      4. (1:30–2:10) The proof: admin "Run burst" → **oversells: 0**, ranks 1..N, OCC retries
+         on screen; mention `npm run stress` **10,000 vs 200, 0 oversells**.
+      5. (2:10–2:35) Multi-tenant B2B: an operator self-registers, creates a release, can delete
+         only their own; lottery "Re-run the draw" → MATCH.
+      6. (2:35–3:00) Why Aurora DSQL (sharded counter + OCC, one ACID transaction) + monetization close.
+- [x] **Published Vercel project link** — https://singleton-six.vercel.app (public, verified).
+- [ ] **Vercel Team ID** — Team settings → General → copy ID (paste into the form).
+- [x] **Architecture diagram** — `docs/architecture.png` (source `docs/architecture.svg`); updated
+      for multi-tenancy + the marketplace.
 - [ ] **Screenshot: storage configuration proving AWS Database usage** — Vercel project
       → Settings → Environment Variables showing `DSQL_CLUSTER_ENDPOINT` / `AWS_REGION`
       (values hidden is fine), plus AWS console cluster page as backup.
@@ -33,7 +41,7 @@ Implementation**.
 - [ ] **Published content piece** with the required disclosure ("created for the purposes of
       entering this hackathon") + **#H0Hackathon** when shared. Draft title: *"How I built
       provably-fair, no-oversell allocation on Aurora DSQL (OCC retries, sharded counters,
-      and a 3,000-claim stress test)"* — publish on builder.aws.com or dev.to.
+      and a 10,000-claim stress test)"* — publish on builder.aws.com or dev.to.
 
 ## v0 evidence (the "Zero Stack" story)
 
@@ -88,7 +96,8 @@ entire judging period.
 
 ## Pre-submit verification
 
-- [ ] `npm run stress -- --attempts 3000 --capacity 200 --shardCount 32` → exit 0, oversells 0.
+- [ ] `npm run stress -- --attempts 10000 --capacity 200 --shardCount 32` → exit 0, oversells 0.
 - [ ] `npm run test` + `npm run test:e2e` green against the live cluster.
-- [ ] Deployed flow smoke-tested: claim → receipt → verify on the Vercel URL.
-- [ ] `/api/health` returns ok on production.
+- [x] Deployed flow smoke-tested: claim → receipt → verify on https://singleton-six.vercel.app.
+- [x] `/api/health` returns ok on production.
+- [ ] Reset showcase before recording: `npx tsx scripts/cleanup-test-data.ts && npx tsx scripts/seed-showcase.ts` (54 events, six per category).

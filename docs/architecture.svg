@@ -17,7 +17,7 @@
   <!-- ===================== title block ===================== -->
   <rect x="40" y="42" width="6" height="46" rx="3" fill="#4f46e5"/>
   <text x="62" y="68" font-size="26" font-weight="600" fill="#171717">Singleton</text>
-  <text x="62" y="93" font-size="14" fill="#737373">Provably-fair allocation, two modes — FCFS claims · commit-reveal lottery — Amazon Aurora DSQL + Next.js on Vercel</text>
+  <text x="62" y="93" font-size="14" fill="#737373">Provably-fair, multi-tenant allocation marketplace — FCFS claims · commit-reveal lottery — Amazon Aurora DSQL + Next.js on Vercel</text>
 
   <!-- legend (top right) -->
   <line x1="1300" y1="56" x2="1342" y2="56" stroke="#4f46e5" stroke-width="1.5" marker-end="url(#ah-i)"/>
@@ -36,8 +36,9 @@
   <text x="72" y="297" font-size="12.5" fill="#737373">claim (FCFS) or enter the draw</text>
 
   <rect x="56" y="372" width="228" height="88" rx="10" fill="#ffffff" stroke="#e5e5e5" stroke-width="1"/>
-  <text x="72" y="404" font-size="13.5" font-weight="600" fill="#171717">Admin</text>
-  <text x="72" y="427" font-size="12.5" fill="#737373">create · run burst · run draw</text>
+  <text x="72" y="400" font-size="13.5" font-weight="600" fill="#171717">Operators + platform admin</text>
+  <text x="72" y="421" font-size="12" fill="#737373">operators: create/delete their own (key)</text>
+  <text x="72" y="439" font-size="12" fill="#737373">platform admin: manage all (token)</text>
 
   <rect x="56" y="514" width="228" height="88" rx="10" fill="#ffffff" stroke="#e5e5e5" stroke-width="1"/>
   <text x="72" y="540" font-size="13.5" font-weight="600" fill="#171717">Stress harness</text>
@@ -60,11 +61,11 @@
 
   <!-- react ui -->
   <rect x="376" y="204" width="458" height="116" rx="10" fill="#ffffff" stroke="#e5e5e5" stroke-width="1"/>
-  <text x="392" y="226" font-size="13.5" font-weight="600" fill="#171717">React UI <tspan fill="#737373" font-weight="400">(mode-aware)</tspan></text>
-  <text x="392" y="248" font-size="12" fill="#171717"><tspan font-family="Consolas, monospace">/releases/[id]</tspan><tspan fill="#737373"> — live remaining or entrant count (polls 1.5s)</tspan></text>
+  <text x="392" y="226" font-size="13.5" font-weight="600" fill="#171717">React UI <tspan fill="#737373" font-weight="400">(filterable marketplace, mode-aware)</tspan></text>
+  <text x="392" y="248" font-size="12" fill="#171717"><tspan font-family="Consolas, monospace">/</tspan><tspan fill="#737373"> — catalog with category/type/status filters · </tspan><tspan font-family="Consolas, monospace">/releases/[id]</tspan></text>
   <text x="392" y="268" font-size="12" fill="#171717"><tspan font-family="Consolas, monospace">/receipt/[id]</tspan><tspan fill="#737373"> — rank #n of N · lottery entry id</tspan></text>
   <text x="392" y="288" font-size="12" fill="#171717"><tspan font-family="Consolas, monospace">/verify/[id]</tspan><tspan fill="#737373"> — ledger · draw proof · in-browser re-run → MATCH</tspan></text>
-  <text x="392" y="308" font-size="12" fill="#171717"><tspan font-family="Consolas, monospace">/admin</tspan><tspan fill="#737373"> — create (FCFS or lottery), run burst, run draw, metrics</tspan></text>
+  <text x="392" y="308" font-size="12" fill="#171717"><tspan font-family="Consolas, monospace">/admin</tspan><tspan fill="#737373"> — operators + admin: create, delete own, run draw, burst</tspan></text>
 
   <!-- api route handlers -->
   <rect x="376" y="336" width="458" height="152" rx="10" fill="#ffffff" stroke="#e5e5e5" stroke-width="1"/>
@@ -75,9 +76,10 @@
   <text x="392" y="402" font-size="12.5" font-family="Consolas, monospace" fill="#171717"><tspan font-weight="600" fill="#737373">POST</tspan> /releases/[id]/enter</text>
   <rect x="578" y="389" width="86" height="19" rx="9.5" fill="#eef2ff" stroke="#4f46e5" stroke-width="1"/>
   <text x="621" y="402" font-size="11" font-weight="600" fill="#4f46e5" text-anchor="middle">equal odds</text>
-  <text x="392" y="422" font-size="12.5" font-family="Consolas, monospace" fill="#171717"><tspan font-weight="600" fill="#737373">POST</tspan> /releases/[id]/draw (admin) · <tspan font-weight="600" fill="#737373">GET</tspan> …/draw-proof</text>
-  <text x="392" y="442" font-size="12.5" font-family="Consolas, monospace" fill="#171717"><tspan font-weight="600" fill="#737373">GET</tspan> /releases/[id]/state · <tspan font-weight="600" fill="#737373">GET</tspan> /releases/[id]/ledger</text>
-  <text x="392" y="462" font-size="12.5" font-family="Consolas, monospace" fill="#171717"><tspan font-weight="600" fill="#737373">POST</tspan> /releases/[id]/simulate (admin) · <tspan font-weight="600" fill="#737373">GET</tspan> /health</text>
+  <text x="392" y="422" font-size="12.5" font-family="Consolas, monospace" fill="#171717"><tspan font-weight="600" fill="#737373">POST</tspan> /releases/[id]/draw (owner) · <tspan font-weight="600" fill="#737373">DELETE</tspan> /releases/[id]</text>
+  <text x="392" y="442" font-size="12.5" font-family="Consolas, monospace" fill="#171717"><tspan font-weight="600" fill="#737373">GET</tspan> …/state · <tspan font-weight="600" fill="#737373">GET</tspan> …/ledger · <tspan font-weight="600" fill="#737373">GET</tspan> …/draw-proof · /health</text>
+  <text x="392" y="462" font-size="12.5" font-family="Consolas, monospace" fill="#171717"><tspan font-weight="600" fill="#737373">POST</tspan> /releases/[id]/simulate (admin) · <tspan font-weight="600" fill="#737373">POST</tspan> /providers</text>
+  <text x="392" y="481" font-size="11.5" fill="#737373">authz: <tspan font-family="Consolas, monospace" fill="#171717">resolveActor</tspan> → platform (token) · provider (key) · owner-scoped writes</text>
 
   <!-- data + domain layer -->
   <rect x="376" y="504" width="458" height="182" rx="10" fill="#ffffff" stroke="#e5e5e5" stroke-width="1"/>
@@ -121,6 +123,8 @@
   <text x="1087" y="296" font-size="11.5" font-family="Consolas, monospace" fill="#171717" text-anchor="middle">allocations</text>
   <rect x="1142" y="280" width="70" height="24" rx="12" fill="#fafafa" stroke="#e5e5e5" stroke-width="1"/>
   <text x="1177" y="296" font-size="11.5" font-family="Consolas, monospace" fill="#171717" text-anchor="middle">waitlist</text>
+  <rect x="1222" y="280" width="116" height="24" rx="12" fill="#fafafa" stroke="#e5e5e5" stroke-width="1"/>
+  <text x="1280" y="296" font-size="11.5" font-family="Consolas, monospace" fill="#171717" text-anchor="middle">release_meta</text>
   <rect x="1042" y="312" width="116" height="24" rx="12" fill="#eef2ff" stroke="#4f46e5" stroke-width="1"/>
   <text x="1100" y="328" font-size="11.5" font-family="Consolas, monospace" fill="#171717" text-anchor="middle">lottery_config</text>
   <rect x="1168" y="312" width="66" height="24" rx="12" fill="#eef2ff" stroke="#4f46e5" stroke-width="1"/>
@@ -144,7 +148,8 @@
   <text x="1042" y="546" font-size="13.5" font-weight="600" fill="#171717">us-west-2 · witness region</text>
   <text x="1042" y="570" font-size="12.5" fill="#737373">transaction-log quorum, no endpoint</text>
 
-  <text x="1285" y="640" font-size="11.5" fill="#737373" text-anchor="middle">active-active: both endpoints serve strongly consistent reads + writes</text>
+  <text x="1285" y="638" font-size="11.5" fill="#737373" text-anchor="middle">active-active: both endpoints serve strongly consistent reads + writes</text>
+  <text x="1285" y="658" font-size="11" fill="#737373" text-anchor="middle">providers.api_key → per-operator auth · release_meta → branding, poster, category</text>
 
   <!-- ===================== bottom strip: claim transaction (mode A) ===================== -->
   <rect x="40" y="732" width="630" height="224" rx="12" fill="#fafafa" stroke="#e5e5e5" stroke-width="1"/>

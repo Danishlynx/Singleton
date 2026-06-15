@@ -237,7 +237,8 @@ src/
   domain/                # claim (the heart), draw (the lottery), rank, shards, lottery hashing
   components/            # shadcn/ui-based UI (intake, lottery, admin, v0 surfaces)
   env.ts                 # Zod-validated env (lazy)
-db/migrations/           # 0001_init, 0002_indexes, 0003_lottery, 0004_lottery_indexes
+db/migrations/           # 0001_init · 0002_indexes · 0003_lottery · 0004_lottery_indexes
+                         #   · 0005_release_meta · 0006_provider_keys · 0007_release_category
 scripts/                 # migrate · seed · stress (fcfs + lottery) · provision/*
 tests/                   # unit · integration (real DSQL) · e2e (Playwright)
 ```

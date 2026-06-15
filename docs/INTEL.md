@@ -27,7 +27,8 @@
 12. [Security, privacy, and the adversarial reviews](#12-security-privacy-and-the-adversarial-reviews)
 13. [Live verification results](#13-live-verification-results)
 14. [Build journey and decision log](#14-build-journey-and-decision-log)
-15. [Glossary](#15-glossary)
+15. [Multi-tenancy, the marketplace, and operator UX](#15-multi-tenancy-the-marketplace-and-operator-ux)
+16. [Glossary](#16-glossary)
 
 ---
 
@@ -41,7 +42,7 @@ Singleton allocates a **fixed batch of scarce slots** (clinic appointments, tick
 
 The defensible insight: **Amazon Aurora DSQL is strongly consistent, horizontally scalable, active-active multi-region, and serverless at once** — so each guarantee reduces to one ordinary ACID transaction (a sharded conditional decrement with optimistic-concurrency retry, or a single commit-reveal draw transaction). There is no Redis lock, no queue, no eventual-consistency reconciliation job, and no chain.
 
-None of this is asserted on faith. The repository carries a stress harness that fired **3,000 concurrent claims at a 200-slot release on the live cluster and proved zero oversells with contiguous ranks 1..200**, and **3,000 concurrent lottery entries whose 200 drawn winners re-derive byte-for-byte from the revealed seed**. Two multi-agent adversarial review passes hunted the concurrency- and secrecy-critical code and the ten real bugs they found are fixed and documented (§12).
+None of this is asserted on faith. The repository carries a stress harness that fired **10,000 concurrent claims at a 200-slot release on the live cluster and proved zero oversells with contiguous ranks 1..200**, and **5,000 concurrent lottery entries whose 200 drawn winners re-derive byte-for-byte from the revealed seed**. Three multi-agent adversarial review passes hunted the concurrency-, secrecy-, and authorization-critical code and the twelve real bugs they found are fixed and documented (§12). The app is multi-tenant (per-operator ownership, §15) and live on Vercel at **`https://singleton-six.vercel.app`**.
 
 ## 2. The problem and the product
 
@@ -96,6 +97,7 @@ src/domain/           # claim (Mode A heart), draw (Mode B heart), lottery hashi
 src/components/       # intake clients, lottery proof, admin, site chrome, v0/ surfaces
 src/lib/              # admin auth, browser sha256, cn()
 db/migrations/        # 0001 init · 0002 indexes · 0003 lottery · 0004 lottery indexes
+                      #   · 0005 release_meta · 0006 provider_keys · 0007 release_category
 scripts/              # migrate · seed · stress (both modes) · render-architecture · provision/*
 tests/                # unit · integration (live DSQL) · e2e (Playwright)
 docs/                 # this document, architecture diagram, submission checklist, v0 evidence
@@ -127,24 +129,25 @@ Two corrections the research pass made to the original build spec are worth nami
 
 ## 5. Data model — every table, every index, every constraint
 
-The entire schema is four SQL files totalling under 120 lines, applied by a custom runner that exists because Aurora DSQL's DDL rules make off-the-shelf migration tools (which wrap files in multi-statement transactions) unusable. Six tables serve FCFS mode plus bookkeeping; two more, added purely additively, serve the lottery. Every constraint that DSQL *can* enforce is pushed into the database; everything it cannot (foreign keys, sequences, triggers) is replaced by an explicit application-layer mechanism described below.
+The schema is seven additive SQL files totalling well under 200 lines, applied by a custom runner that exists because Aurora DSQL's DDL rules make off-the-shelf migration tools (which wrap files in multi-statement transactions) unusable. Six tables serve FCFS mode plus bookkeeping; two more serve the lottery; the later migrations add branding/category to a side table and an operator key to `providers` — **all strictly additive, never altering an existing column's meaning** (see §15 for the multi-tenancy and marketplace features they enable). Every constraint that DSQL *can* enforce is pushed into the database; everything it cannot (foreign keys, sequences, triggers) is replaced by an explicit application-layer mechanism described below.
 
 ### 5.1 Table inventory
 
 | Table | Created in | Role | Key invariant it anchors |
 |---|---|---|---|
 | `schema_migrations` | bootstrapped by [scripts/migrate.ts](../scripts/migrate.ts) | which migration files have run | idempotent re-runs |
-| `providers` | [0001](../db/migrations/0001_init.sql) | who publishes releases | — |
+| `providers` | [0001](../db/migrations/0001_init.sql) (+ `api_key` in [0006](../db/migrations/0006_provider_keys.sql)) | operators/tenants; `api_key` authenticates them | unique `api_key` (operator identity) |
 | `releases` | [0001](../db/migrations/0001_init.sql) | a drop: capacity, window, status | `capacity > 0`, status state machine |
 | `release_shards` | [0001](../db/migrations/0001_init.sql) | capacity split into N counter rows | `SUM(remaining)` = remaining capacity; `remaining >= 0` |
 | `allocations` | [0001](../db/migrations/0001_init.sql) | one row per granted slot | no oversell, one slot per claimant, retry safety |
 | `waitlist` | [0001](../db/migrations/0001_init.sql) | claimants who arrived after sell-out | one entry per claimant |
 | `lottery_config` | [0003](../db/migrations/0003_lottery.sql) | per-release commit-reveal state | seed committed before entries open; draw runs once |
 | `entries` | [0003](../db/migrations/0003_lottery.sql) | one row per lottery entrant | one entry per claimant |
+| `release_meta` | [0005](../db/migrations/0005_release_meta.sql) (+ `category` in [0007](../db/migrations/0007_release_category.sql)) | optional branding: poster, description, venue, event date, category | 1:1 with a release (app-enforced) |
 
 ### 5.2 Core tables
 
-**`providers`** — `id uuid PK`, `name`, `created_at`. Deliberately minimal: it exists so `releases.provider_id` has something real to point at and the demo seed has an owner. No auth model hangs off it.
+**`providers`** — `id uuid PK`, `name`, `created_at`, and (since [0006](../db/migrations/0006_provider_keys.sql)) a nullable, unique **`api_key`**. Originally a minimal owner record; the key turned it into the tenant identity for the multi-tenancy model (§15). Existing/seed providers have a `NULL` key (NULLs are distinct in a Postgres unique index, so many coexist) and are platform-owned demo data; an operator who self-registers through `/api/providers` gets a real `op_…` key that authenticates them as a tenant.
 
 **`releases`** — the central entity:
 
@@ -522,32 +525,34 @@ Error envelope conventions: validation failures are `400 { error, issues? }`; st
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
 | GET | `/api/health` | public | DB liveness probe (`SELECT 1`, `now()`), multi-region flag |
-| GET | `/api/releases` | public | List releases with live state |
-| POST | `/api/releases` | admin | Create a release (FCFS, or lottery if `lottery` present) |
+| GET | `/api/releases` | public | List releases with live state (incl. `providerId`, category) |
+| POST | `/api/releases` | platform / operator | Create a release (owned by the operator, or the named provider for platform) |
+| DELETE | `/api/releases/[id]` | platform / owner | Delete a release + all child rows (batched cascade) ([route](../app/api/releases/%5Bid%5D/route.ts)) |
 | POST | `/api/releases/[id]/claim` | public | Mode A: claim a slot (idempotent) |
 | GET | `/api/releases/[id]/state` | public | Live counts + mode + lottery commitment |
 | GET | `/api/releases/[id]/ledger` | public | Anonymized allocation ledger with derived ranks |
-| POST | `/api/releases/[id]/simulate` | admin | In-process concurrent claim burst + invariant audit |
+| POST | `/api/releases/[id]/simulate` | platform | In-process concurrent claim burst + invariant audit (platform-only; see §12) |
 | POST | `/api/releases/[id]/enter` | public | Mode B: enter the draw window (idempotent) |
-| POST | `/api/releases/[id]/draw` | admin | Mode B: run the commit-reveal draw (idempotent) |
+| POST | `/api/releases/[id]/draw` | platform / owner | Mode B: run the commit-reveal draw (idempotent) |
 | GET | `/api/releases/[id]/draw-proof` | public | Verifiable proof payload; seed only post-draw |
 | GET | `/api/entries/[entryId]` | public* | Mode B: check one's own result by entry id |
 | GET | `/api/allocations/[id]` | public* | Receipt payload: release, capacity, derived rank, lottery entry id if drawn ([route](../app/api/allocations/%5Bid%5D/route.ts)) |
+| POST | `/api/providers` | public | Self-serve operator registration; returns the api key **once** ([route](../app/api/providers/route.ts)) |
+| POST | `/api/providers/session` | operator | Resolve an operator key to its provider identity (cross-device sign-in) ([route](../app/api/providers/session/route.ts)) |
 
 \* `entryId` / allocation `id` act as bearer capabilities — each was returned only to its owner and is never published alongside an identity (the public ledger carries allocation ids only with timestamps and ranks, no claimants).
 
-### Admin authentication
+### Authentication and authorization (two roles)
 
-Admin routes (`POST /api/releases`, `simulate`, `draw`) call `isAdminRequest` from [src/lib/admin.ts](../src/lib/admin.ts), which reads the `x-admin-token` header and compares it against `ADMIN_TOKEN` in constant time:
+Singleton is multi-tenant (§15). Every mutating request is resolved to an **actor** by `resolveActor` in [src/lib/admin.ts](../src/lib/admin.ts):
 
-```ts
-const a = Buffer.from(token);
-const b = Buffer.from(expected);
-if (a.length !== b.length) return false;
-return timingSafeEqual(a, b);
-```
+- **platform** — the request carries the master `ADMIN_TOKEN` in the `x-admin-token` header (constant-time compared via `timingSafeEqual`, with the standard length-leak trade-off). A super-admin over every release; this is what the hackathon judges use.
+- **provider** — the request carries an operator key in the `x-provider-key` header that matches a `providers.api_key` row (looked up via the unique index, then constant-time re-compared). Scoped to the releases that operator owns.
+- **none** — neither matches → `401 { "error": "unauthorized" }` before any body parsing.
 
-The length check is required — `timingSafeEqual` throws on unequal lengths — and leaking the token's *length* is an accepted, standard trade-off. The token itself lives in the environment (`ADMIN_TOKEN`), validated lazily by the memoized Zod schema in [src/env.ts](../src/env.ts) (`z.string().min(1)`); lazy validation means `next build` succeeds on a machine without secrets, while the first real request fails fast with a readable error. A missing or wrong token yields `401 { "error": "unauthorized" }` before any body parsing.
+Platform is checked first and short-circuits, so the master token never depends on a database lookup. Release-scoped mutations (delete, draw, burst) go through `authorizeReleaseMutation(req, releaseId)`, which resolves the actor, loads the release (404 if absent), and enforces ownership: **platform may act on any release; a provider only on one it owns (else 403)**. The burst simulator is deliberately restricted to platform only — it is a stress/demo amplifier, and leaving it open to self-registered operator keys would be a write-amplification vector on the metered cluster (§12).
+
+Secrets are validated lazily by the memoized Zod schema in [src/env.ts](../src/env.ts), so `next build` succeeds without them while the first real request fails fast. The platform magic link delivers the token in the URL **fragment** (`/admin#token=…`), which browsers never send to the server, keeping it out of access logs and `Referer` headers (§12).
 
 ### GET /api/health
 
@@ -733,7 +738,8 @@ export default async function ReleasePage({ params }: { params: Promise<{ id: st
 
 | Route | File | Server renders | Client takes over |
 |---|---|---|---|
-| `/` | [app/page.tsx](../app/page.tsx) | Hero, principles, live-release grid (up to 12 release states fetched in parallel; DB errors degrade to a setup hint, not a crash) | Nothing — fully static per request |
+| `/` | [app/page.tsx](../app/page.tsx) | Hero, principles, and the release set (up to 100, fetched in two batched round trips; DB errors degrade to a setup hint, not a crash) | `ReleasesBrowser` — the marketplace filter rail + sort + grid, all client-side over the fetched set (§15.2) |
+| `/admin` (operator) | [admin-auth.tsx](../src/components/admin/admin-auth.tsx) | — | Operator self-registration + key, or platform/operator sign-in (`AuthGate`); credential drives every admin request (§15.1) |
 | `/releases/[id]` | [app/releases/[id]/page.tsx](<../app/releases/[id]/page.tsx>) | Card shell, title, capacity copy; branches on `state.mode` | `IntakeClient` (FCFS) or `LotteryIntakeClient` (lottery), seeded with the server-fetched state as `initial` |
 | `/receipt/[allocationId]` | [app/receipt/[allocationId]/page.tsx](<../app/receipt/[allocationId]/page.tsx>) | Entire receipt: rank, capacity, timestamp via `getAllocationWithRank`; an extra "selected from the window" panel when `lotteryEntryId` is present | Nothing — a receipt is a fact, not a live view |
 | `/verify/[releaseId]` | [app/verify/[releaseId]/page.tsx](<../app/verify/[releaseId]/page.tsx>) | Ledger table, capacity-check banner, mode detection | `LotteryProof` (lottery releases only) — verification must run in the visitor's browser to mean anything |
@@ -997,6 +1003,8 @@ The entire deployment configuration is small enough to reason about line by line
 
 Version pins follow the same philosophy as the connection design: [package.json](../package.json) locks Next.js at `15.5.19` (spec-locked even though 16 is current), the pre-1.0 DSQL connector at exactly `0.1.9`, and the two AWS SDK packages (`@aws-sdk/dsql-signer`, `@aws-sdk/credential-providers`) at matching `3.1064.0` — in a system whose core claim is determinism, an unreviewed minor bump in the auth path is not an acceptable variable.
 
+**Live deployment.** The app runs on Vercel at **`https://singleton-six.vercel.app`** — use that clean production alias, not a `*-<hash>.vercel.app` deployment URL, since per-deployment URLs sit behind Vercel's Deployment Protection and return 401 to anyone but the owner. Six environment variables are set in the Vercel project: `AWS_REGION`, `DSQL_CLUSTER_ENDPOINT`, `CLUSTER_USER`, `ADMIN_TOKEN`, and — critically — `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`. Those last two are intentionally absent from local `.env.local` (local dev resolves credentials from the `aws configure` shared profile), but Vercel has no profile, so the static IAM keys for the `singleton-dsq` user must be set explicitly or every DB call fails IAM auth. Local and production share the one DSQL cluster, so `npm run migrate` from a laptop also migrates production. Push-to-`main` auto-deploys; the additive migrations (0005–0007) were applied to the shared cluster ahead of the code that reads them, so each deploy lands on a schema that already has its columns.
+
 ---
 
 ## 11. Testing, verification, and operations
@@ -1191,14 +1199,14 @@ Script-level knobs not in `.env.example`: `DB_POOL_MAX` (pool size — defaulted
 ### 12.1 The standing rules
 
 - **No database password exists.** All DSQL access is IAM-authenticated: short-lived signed tokens, minted per connection by the official connector, scoped by a least-privilege policy ([scripts/provision/iam-policy.json](../scripts/provision/iam-policy.json)) that can touch DSQL and nothing else. Leaked app credentials cannot reach any other AWS service.
-- **Admin actions** (create release, simulate burst, run draw) require the `x-admin-token` header, compared in **constant time** (`timingSafeEqual`, [src/lib/admin.ts](../src/lib/admin.ts)) against `ADMIN_TOKEN`.
+- **Two authenticated roles** (§8, §15): a *platform* super-admin holding `ADMIN_TOKEN` (constant-time compared via `timingSafeEqual`, [src/lib/admin.ts](../src/lib/admin.ts)) and per-tenant *operators* holding a unique `providers.api_key`. Release-scoped mutations (delete, draw, burst) run through `authorizeReleaseMutation`, which enforces that an operator can act only on releases it owns; the burst simulator is platform-only.
 - **The lottery seed is secret until the draw.** Only `seed_hash` is ever serialized pre-draw; the seed column is read by exactly one internal accessor, no log line or error message embeds it, and the draw-proof endpoint nulls it until `drawn_at` is set.
 - **Participant identity never enters public payloads.** Draw proofs and the public ledger identify entries/allocations by opaque UUIDs only; `claimant_id` (often an email) is reachable only by admin-side code paths.
 - **Every write path is idempotent**, so retries — human, client, or network — cannot double-allocate, double-enter, or double-draw.
 
-### 12.2 The ten bugs the adversarial reviews caught
+### 12.2 The twelve bugs the adversarial reviews caught
 
-Twice during the build — after the Mode A core and after Mode B — a multi-agent adversarial review (parallel reviewers per dimension, each finding independently re-verified by a skeptic agent before being accepted) attacked the concurrency- and secrecy-critical code. **All ten confirmed findings were real, and all are fixed:**
+Three times during the build — after the Mode A core, after Mode B, and after the multi-tenancy work — a multi-agent adversarial review (parallel reviewers per dimension, each finding independently re-verified by a skeptic agent before being accepted) attacked the concurrency-, secrecy-, and authorization-critical code. **All twelve confirmed findings were real, and all are fixed.** The first two reviews caught these ten:
 
 | # | Severity | Finding | Fix |
 |---|---|---|---|
@@ -1213,7 +1221,14 @@ Twice during the build — after the Mode A core and after Mode B — a multi-ag
 | 9 | High | Missing rowcount guard on the release-close update inside the draw | throws loudly on mismatch |
 | 10 | High | Post-draw result fetch in the lottery UI stuck permanently after one HTTP error | retries every poll tick ([lottery-intake-client.tsx](../src/components/lottery-intake-client.tsx)) |
 
-The honest meta-lesson: even with the invariants designed in from the start, the gap between "the algorithm is right" and "every path around the algorithm is right" produced ten real defects — and structured adversarial review with mandatory re-verification (several plausible-sounding findings were *rejected* as not-bugs) caught them before any user could.
+A **third adversarial review**, run when the multi-tenancy authorization shipped (§15), confirmed two more — both fixed before that feature was pushed:
+
+| # | Severity | Finding | Fix |
+|---|---|---|---|
+| 11 | High | Master `ADMIN_TOKEN` rode the magic link as a **query parameter** (`/admin?token=…`), so it could land in server/CDN access logs and `Referer` headers before the client-side scrub ran | the token now travels in the URL **fragment** (`/admin#token=…`), which browsers never send to the server, plus a `Referrer-Policy: no-referrer` header on `/admin` ([admin-auth.tsx](../src/components/admin/admin-auth.tsx), [next.config.ts](../next.config.ts)) |
+| 12 | Medium | Open self-serve registration + an owner-runnable burst (up to 2,000×100 claims) was a **write-amplification DoS** vector on the metered cluster | the burst simulator is restricted to the platform role; operators keep create/delete/draw on their own releases ([simulate route](../app/api/releases/%5Bid%5D/simulate/route.ts), [src/lib/admin.ts](../src/lib/admin.ts)) |
+
+The honest meta-lesson: even with the invariants designed in from the start, the gap between "the algorithm is right" and "every path around the algorithm is right" produced twelve real defects across three reviews — and structured adversarial review with mandatory re-verification (several plausible-sounding findings were *rejected* as not-bugs) caught them before any user could.
 
 ### 12.3 Deliberately out of scope
 
@@ -1243,6 +1258,16 @@ Everything below ran against the **live Aurora DSQL cluster** in us-east-1 (no l
 
 **Latency anatomy worth understanding:** a sold-out FCFS claim originally walked all shards blind — ~48 WAN round trips ≈ 12 s from the test machine. The candidate-prefilter optimization (one `SELECT` of non-empty shards; correctness still rests entirely on the conditional `UPDATE`) collapsed that to one round trip. From Vercel `iad1`, every round trip is ~1–2 ms — the same operations run two orders of magnitude faster in production placement. The in-UI burst (admin → Run burst) executes server-side in-region for exactly this reason.
 
+**Later additions — multi-tenancy, marketplace, deployment:**
+
+| Check | Result |
+|---|---|
+| Heavier FCFS stress | **10,000 concurrent claims vs capacity 200** → exactly 200 allocated · 0 oversells · ranks 1..200 contiguous · 0 errors |
+| Heavier lottery stress | **5,000 entries** → 0 duplicates · 200 winners re-derived byte-for-byte |
+| Ownership authorization (HTTP + browser) | operator deletes own → 200; another operator's → **403**; unauthenticated → **401**; platform → any. 4 dedicated integration tests + live HTTP and Playwright matrices |
+| Live deployment | `https://singleton-six.vercel.app` — `/api/health` 200 with `db.ok`; full claim → receipt → ledger exercised from outside the owner's session |
+| Marketplace | 54 curated releases (six per category) with 4K posters — all 54 images verified loading in-browser; every category filters to exactly 6 |
+
 ## 14. Build journey and decision log
 
 The build followed a research-first discipline: before any code, an 11-agent research pass verified every stack assumption against current official AWS/Vercel/Next.js documentation, with the riskiest claims adversarially fact-checked. That pass is why this codebase never hit the classic DSQL landmines (CHECK folklore, token caching, multi-statement migrations).
@@ -1268,9 +1293,34 @@ The build followed a research-first discipline: before any code, an 11-agent res
 - *A `git reset --hard` with uncommitted work destroyed two files mid-history-build* — reconstructed and re-verified, but the lesson (stash or commit first) is now policy.
 - *First cluster in an account needs `iam:CreateServiceLinkedRole`* — scoped to `dsql.amazonaws.com` in the provisioning policy; the error message doesn't tell you that.
 
-**Evidence of work:** the repository history is six `--no-ff` feature merges (foundation → DSQL core → v0 surfaces → lottery → product UI → docs), all dated within the hackathon submission period, with this document and the diagram updates following the same pattern.
+**Evidence of work:** the early history is six `--no-ff` feature merges (foundation → DSQL core → v0 surfaces → lottery → product UI → docs); the later product arc continues in focused commits on `main` — the Counterfoil redesign, em-dash copy sweep, per-tenant ownership (+ adversarial review fixes), the category marketplace and 54-event showcase, immersive release pages, and these doc/diagram updates — all dated within the hackathon submission period.
 
-## 15. Glossary
+## 15. Multi-tenancy, the marketplace, and operator UX
+
+The original build was a single-operator console behind one shared token. Three additive migrations (0005–0007) plus a client rebuild turned it into a multi-tenant marketplace, with **zero change to the Mode A / Mode B allocation paths** — the additive-only discipline from the lottery work held again.
+
+### 15.1 Per-tenant ownership
+
+A *provider* is now a tenant. [0006_provider_keys.sql](../db/migrations/0006_provider_keys.sql) adds a nullable, uniquely-indexed `providers.api_key`; [src/db/providers.ts](../src/db/providers.ts) mints `op_`-prefixed keys (`createProviderWithKey`) and resolves them (`getProviderByKey`, constant-time compared). Two roles result, both handled by `resolveActor` / `authorizeReleaseMutation` in [src/lib/admin.ts](../src/lib/admin.ts) (see §8):
+
+- **Platform** — holds `ADMIN_TOKEN`; super-admin over every release. The hackathon judges use this via the `/admin#token=…` magic link.
+- **Operator** — holds an `api_key`; may create releases (owned by them) and delete or run the draw on **only their own** (403 otherwise). The burst simulator stays platform-only (§12).
+
+The check is server-enforced; the UI's choice to *show* a delete control is convenience only. `createRelease` stamps `provider_id` from the authenticated operator, so a tenant cannot create under another's identity. Cascade delete ([`deleteRelease`](../src/db/releases.ts)) removes a release plus its allocations, waitlist, entries, shards, meta, and lottery config in batches under DSQL's 3,000-row transaction cap.
+
+Operators self-register at `POST /api/providers` (returns the key **once**; the panel offers copy and a CSV download, mirroring a cloud access-key file) and re-authenticate on another device via `POST /api/providers/session`. The admin console ([app/admin/page.tsx](../app/admin/page.tsx), [admin-auth.tsx](../src/components/admin/admin-auth.tsx)) gates on a credential object (`{ kind: "platform" | "provider", … }`) and attaches either `x-admin-token` or `x-provider-key` per request.
+
+### 15.2 The category marketplace
+
+[0007_release_category.sql](../db/migrations/0007_release_category.sql) adds a nullable `release_meta.category` (a slug from the nine-item taxonomy in [src/lib/categories.ts](../src/lib/categories.ts)); the admin create form gains a selector. The landing "Live releases" section is now a marketplace ([src/components/releases-browser.tsx](../src/components/releases-browser.tsx)): a left filter rail (search, category, allocation type, availability, date window, location) plus a sort control (newest, closing soon, most/fewest spots) and a live result count. Filtering is entirely client-side over the full release set (the listing cap rose to 100), so it is instant and adds zero database load. Most filters run on data that already existed (mode, status, venue, dates, title); only category needed the new column.
+
+### 15.3 Immersive release pages and the showcase
+
+A release with a poster now renders it as a vignetted, full-bleed page background behind a translucent glass card (the card's `backdrop-blur` over the photo creates depth; the in-card "Back to all releases" link stays legible over any image). The receipt ledger shows the **full** receipt id (it had been truncated to eight characters) — matching your receipt against the public list is the whole point. A proper logo ([src/components/logo.tsx](../src/components/logo.tsx), favicon [app/icon.svg](../app/icon.svg)) replaced the placeholder mark.
+
+The demo seed ([scripts/seed-showcase.ts](../scripts/seed-showcase.ts), data in [scripts/showcase-events.json](../scripts/showcase-events.json)) is **54 curated releases — six per category** — with modern copy and verified 4K posters, seeded with organic activity through the real domain paths so the marketplace reads as live rather than freshly installed. The posters were curated and image-verified out of band by a nine-way parallel agent pass that fetched, viewed, and trademark-screened each candidate; the seed then re-checks every URL serves `image/*` before writing. Test-data hygiene is automatic: a Playwright global teardown sweeps `E2E …` releases after every run, and the cleanup CLI derives the showcase titles straight from the JSON so a reset stays exhaustive.
+
+## 16. Glossary
 
 | Term | Meaning here |
 |---|---|
