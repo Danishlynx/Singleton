@@ -184,6 +184,9 @@ function CreateRelease({ cred, onCreated }: { cred: Credential; onCreated: () =>
             value={capacity}
             onChange={(e) => setCapacity(e.target.value)}
           />
+          <p className="text-xs text-muted-foreground">
+            Total slots available. Never oversold, no matter the rush.
+          </p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="shards">Shard count</Label>
@@ -193,6 +196,9 @@ function CreateRelease({ cred, onCreated }: { cred: Credential; onCreated: () =>
             value={shardCount}
             onChange={(e) => setShardCount(e.target.value)}
           />
+          <p className="text-xs text-muted-foreground">
+            Splits the counter to stay fast under load. 32 is a safe default; leave it if unsure.
+          </p>
         </div>
         <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="opensAt">Opens at (optional, your local time, shown publicly in UTC)</Label>
@@ -260,8 +266,10 @@ function CreateRelease({ cred, onCreated }: { cred: Credential; onCreated: () =>
             onChange={(e) => setImageUrl(e.target.value)}
           />
           <p className="text-xs text-muted-foreground">
-            Google Drive / Dropbox share links are converted automatically. The file must be
-            shared as &ldquo;anyone with the link.&rdquo;
+            Use a high-resolution image (at least 1600px wide, 4K is ideal). It fills the release
+            page as a full-bleed background, so low-res pictures look blurry. Google Drive / Dropbox
+            share links are converted automatically; the file must be shared as &ldquo;anyone with
+            the link.&rdquo;
           </p>
           <PosterPreview url={imageUrl} />
         </div>
