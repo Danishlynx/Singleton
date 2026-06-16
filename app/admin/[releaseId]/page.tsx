@@ -191,7 +191,7 @@ function SimulatePanel({ cred, releaseId }: { cred: Credential; releaseId: strin
         body: JSON.stringify({ attempts, concurrency }),
       });
       if (res.status === 401) {
-        toast.error("Your session expired. Sign in again.");
+        toast.error("Admin token rejected by this server. Sign in again.");
         return;
       }
       const data = (await res.json()) as SimMetrics & { error?: string };

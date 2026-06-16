@@ -213,9 +213,66 @@ export function AuthGate({ children }: { children: (cred: Credential) => ReactNo
     providerName: string;
     apiKey: string;
   } | null>(null);
+  const [signInError, setSignInError] = useState<string | null>(null);
+  // Platform tokens are verified before the dashboard renders, so a stale token
+  // saved for a different environment (e.g. local vs production) is caught here
+  // with a clear message instead of failing later as a misleading "session expired".
+  const [platformOk, setPlatformOk] = useState(false);
+  const platformToken = cred?.kind === "platform" ? cred.token : null;
+
+  useEffect(() => {
+    if (!loaded) return;
+    if (!platformToken) {
+      setPlatformOk(true); // provider or signed-out: nothing to verify here
+      return;
+    }
+    setPlatformOk(false);
+    let cancelled = false;
+    fetch("/api/admin/session", { method: "POST", headers: { "x-admin-token": platformToken } })
+      .then((res) => {
+        if (cancelled) return;
+        if (res.ok) {
+          setPlatformOk(true);
+        } else {
+          setMode("platform");
+          setSignInError("That admin token isn't valid for this server. Sign in again.");
+          setCredential(null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setPlatformOk(true); // network blip: don't lock the operator out
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, platformToken]);
+
+  async function signInPlatform(token: string) {
+    const t = token.trim();
+    if (!t) return;
+    setBusy(true);
+    setSignInError(null);
+    try {
+      const res = await fetch("/api/admin/session", {
+        method: "POST",
+        headers: { "x-admin-token": t },
+      });
+      if (!res.ok) {
+        setSignInError("Invalid admin token.");
+        return;
+      }
+      setCredential({ kind: "platform", token: t });
+    } catch {
+      setSignInError("Could not reach the server. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   if (!loaded) return null;
-  if (cred) return <>{children(cred)}</>;
+  if (cred && (cred.kind === "provider" || platformOk)) return <>{children(cred)}</>;
+  if (platformToken && !platformOk) return null; // verifying a stored platform token
 
   async function register() {
     if (!companyName.trim()) return;
@@ -370,17 +427,19 @@ export function AuthGate({ children }: { children: (cred: Credential) => ReactNo
               type="password"
               autoComplete="off"
               value={tokenInput}
-              onChange={(e) => setTokenInput(e.target.value)}
+              onChange={(e) => {
+                setTokenInput(e.target.value);
+                if (signInError) setSignInError(null);
+              }}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && tokenInput.trim())
-                  setCredential({ kind: "platform", token: tokenInput.trim() });
+                if (e.key === "Enter") void signInPlatform(tokenInput);
               }}
             />
+            {signInError && <p className="text-xs text-destructive">{signInError}</p>}
             <Button
               className="w-full"
-              onClick={() =>
-                tokenInput.trim() && setCredential({ kind: "platform", token: tokenInput.trim() })
-              }
+              onClick={() => void signInPlatform(tokenInput)}
+              disabled={busy || !tokenInput.trim()}
             >
               Continue
             </Button>
